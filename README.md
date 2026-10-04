@@ -1,5 +1,7 @@
 # 卫戍协议：盟约 · Stronghold Protocol: Alliance
 
+> 本 fork 的 `codex/android` 分支维护完整离线 Android 版：内置 Node、游戏素材与字体，支持单机和主动开启局域网联机。安装、构建和自动更新说明见 [Android 说明](mobile/README.md)，当前候选验收状态见 [验证记录](mobile/VALIDATION.md)。`master` 保留并同步作者原版。
+
 《明日方舟》季节性自走棋塔防玩法「卫戍协议：盟约」的**非官方同人复刻**：浏览器即开即玩，单人或 1–4 人联机合作。
 
 ![version](https://img.shields.io/badge/version-0.1.2-2ea44f)

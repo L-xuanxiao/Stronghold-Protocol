@@ -90,17 +90,20 @@ async function connectWebView() {
     socket.addEventListener('open', () => { clearTimeout(timer); resolve(); }, { once: true });
     socket.addEventListener('error', () => { clearTimeout(timer); reject(new Error('WebView debugging connection failed')); }, { once: true });
   });
-  return {
-    close: () => socket.close(),
-    evaluate: expression => new Promise((resolve, reject) => {
+  const command = (method, params) => new Promise((resolve, reject) => {
       const id = ++nextId;
       const timer = setTimeout(() => { pending.delete(id); reject(new Error('WebView DOM evaluation timed out')); }, 10000);
-      pending.set(id, { timer, reject, resolve: result => {
-        if (result.exceptionDetails) reject(new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text));
-        else resolve(result.result?.value);
-      } });
-      socket.send(JSON.stringify({ id, method: 'Runtime.evaluate', params: { expression, returnByValue: true, userGesture: true } }));
-    }),
+      pending.set(id, { timer, reject, resolve });
+      socket.send(JSON.stringify({ id, method, params }));
+    });
+  return {
+    close: () => socket.close(),
+    insertText: text => command('Input.insertText', { text }),
+    evaluate: async expression => {
+      const result = await command('Runtime.evaluate', { expression, returnByValue: true, userGesture: true });
+      if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
+      return result.result?.value;
+    },
   };
 }
 async function waitDom(name, matches) {
@@ -133,7 +136,7 @@ try {
   const sdk = Number(run('shell', 'getprop', 'ro.build.version.sdk').trim());
   if (sdk !== 36 || pages !== 16384) throw new Error(`Android 16 / 16 KB required, got API ${sdk}, page size ${pages}`);
   if (run('shell', 'getprop', 'sys.boot_completed').trim() !== '1') throw new Error('emulator has not completed boot');
-  original = Object.fromEntries(['airplane_mode_on', 'wifi_on', 'mobile_data', 'always_finish_activities']
+  original = Object.fromEntries(['airplane_mode_on', 'wifi_on', 'mobile_data']
     .map(key => [key, run('shell', 'settings', 'get', 'global', key).trim()]));
   run('shell', 'cmd', 'connectivity', 'airplane-mode', 'enable');
   run('shell', 'svc', 'wifi', 'disable');
@@ -177,8 +180,9 @@ try {
   await waitDom('title', state => state.text.includes('STRONGHOLD PROTOCOL') && state.text.includes('博士代号') && state.text.includes('已连接服务器')
     && state.inputs.some(input => input.type === 'text'));
   await webView.evaluate('[...document.querySelectorAll("input")].find(input=>input.type==="text").focus()');
-  run('shell', 'input', 'text', 'AndroidQA');
-  run('shell', 'input', 'keyevent', '66');
+  await webView.insertText('AndroidQA');
+  await waitDom('nickname-input', state => state.inputs.some(input => input.type === 'text' && input.value === 'AndroidQA'));
+  await webView.evaluate('[...document.querySelectorAll("button")].find(button=>button.innerText.trim()==="开始"&&!button.disabled).click()');
   await waitDom('lobby', state => state.text.includes('选择模拟协议') && state.text.includes('独立模拟') && state.text.includes('AndroidQA'));
   console.log('Visible game title and nickname-to-lobby interaction passed');
   health = await healthNow();
@@ -186,12 +190,11 @@ try {
   if (!Number.isInteger(health.uptimeSec)) throw new Error('game server did not report its uptime');
   const before = { app: run('shell', 'pidof', packageName).trim(), node: nodePid(), uptimeSec: health.uptimeSec };
   webView.close(); webView = null;
-  // Android 12+ 的普通返回可能只后台化任务；开发者开关确保真正销毁 Activity 而保留 Service。
+  // Android 12+ 普通返回可能只后台化任务；am -R 会结束上一个 Activity 并重复启动，Service 保持运行。
   const destroyEvents = () => run('logcat', '-b', 'events', '-d', '-v', 'brief')
     .split('\n').filter(line => line.includes('wm_on_destroy_called') && line.includes(`${packageName}.MainActivity`)).length;
   const destroyedBefore = destroyEvents();
-  run('shell', 'settings', 'put', 'global', 'always_finish_activities', '1');
-  run('shell', 'input', 'keyevent', '3');
+  run('shell', 'am', 'start', '-W', '-R', '2', '-n', activity);
   let destroyed = false;
   for (let i = 0; i < 20; i++) {
     if (destroyEvents() > destroyedBefore) { destroyed = true; break; }
@@ -199,8 +202,6 @@ try {
   }
   if (!destroyed) throw new Error('Activity destruction was not observed; recreation was not tested');
   console.log('Activity destruction observed; checking service continuity and saved nickname');
-  await sleep(2000);
-  run('shell', 'am', 'start', '-n', activity);
   await waitUi('recreated-native', nodes => nodes.some(node => node.class === 'android.webkit.WebView'));
   webView = await connectWebView();
   await waitDom('recreated', state => (state.text.includes('AndroidQA') || state.inputs.some(input => input.value === 'AndroidQA'))
@@ -229,8 +230,6 @@ try {
       ['shell', 'cmd', 'connectivity', 'airplane-mode', original.airplane_mode_on === '1' ? 'enable' : 'disable'],
       ['shell', 'svc', 'wifi', original.wifi_on === '1' ? 'enable' : 'disable'],
       ['shell', 'svc', 'data', original.mobile_data === '1' ? 'enable' : 'disable'],
-      ['shell', 'settings', original.always_finish_activities === 'null' ? 'delete' : 'put', 'global', 'always_finish_activities',
-        ...(original.always_finish_activities === 'null' ? [] : [original.always_finish_activities])],
     ]) {
       const restored = spawnSync(adb, [...args, ...command], { encoding: 'utf8', timeout: 10000, windowsHide: true });
       if (restored.status !== 0) { console.error(`Could not restore emulator setting: ${command.join(' ')}: ${restored.stderr || restored.error}`); process.exitCode = 1; }

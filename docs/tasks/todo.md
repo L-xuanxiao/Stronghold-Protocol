@@ -33,7 +33,7 @@
 - ARM64、x86_64 原生运行时均锁定 Node 24.18.0，动态依赖闭包及 PT_LOAD 16 KB 对齐通过。
 - 最终包包含 5795 文件、全套原版素材、三款补充离线字体/OFL 和完整 NOTICE.md；资源包 SHA256 d2f072c915773986ceef2791e7cd8cbe9b6bdde4114026c752d1742f60d0e077。
 - ARM64 已生成长期签名 APK（429663926 bytes），APK 实际包名、versionCode=1、版本名、证书、签名和 SHA256 验证通过。Release/Debug 各 15 项单元测试通过；lint 0 errors / 5 warnings。
-- Android 16 / API36 的 16 KB 模拟器实际 PAGE_SIZE=16384；本地 Node 与标题页成功启动。Windows qemu 宿主反复发生 0xc0000005，完整交互自动化仍待验证，正尝试恢复及 Linux/KVM CI。
+- Android 16 / API36 的 16 KB 模拟器实际 PAGE_SIZE=16384；软件渲染曾使 Windows qemu 宿主发生 0xc0000005，host 渲染下中间包完整自动化通过：首次断网启动、昵称进大厅、Activity 销毁/重建、同 Node PID/uptime、昵称保留。最终包覆盖升级与实际入局检查进行中。
 - 真机信息：iQOO 15 / Android 16，当前未连接；真机与双设备仍待验收，未正式发布。
 
 详细的验证范围和剩余门禁见 [移动端验证记录](../../mobile/VALIDATION.md)。

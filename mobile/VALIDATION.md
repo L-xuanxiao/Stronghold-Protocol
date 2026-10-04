@@ -13,9 +13,9 @@
 | 官方素材与字体 | 通过 | 5995 项原素材引用完整；字体固定官方提交与 SHA256，含 OFL；原 NOTICE.md 字节一致 |
 | 原生组件 | 两 ABI 通过静态检查 | Node 24.18.0、依赖闭包、文件 SHA256 与 PT_LOAD 的 16 KB 对齐；ARM64 尚待真机运行 |
 | APK 构建与签名 | 通过 | ARM64 APK 429663926 bytes，实际包名/versionCode/版本名、证书、签名、zipalign 与校验值均验证 |
-| Windows 16 KB 模拟器冷启动 | 部分通过 | API36 / PAGE_SIZE=16384；首次断网启动、本地服务 health=0.1.2、sockets=1、标题页渲染成功；完整交互尚未通过 |
+| Windows 16 KB 模拟器启动与界面重建 | 中间包通过，最终升级检查进行中 | API36 / PAGE_SIZE=16384；断网清数据首次启动、实际昵称进大厅、Activity 真正销毁/重建；app PID4379、Node PID4452 不变，uptime4→9、sockets=1、昵称保留。`mobile/build/qa/smoke.json` |
 
-首次模拟器开机出现的 GMS/System UI 无响应对话框发生在游戏安装前；游戏自身未见 ANR。后续 Windows 宿主 `qemu-system-x86_64-headless.exe` 反复发生 access violation（0xc0000005），不能当作游戏进程崩溃，也不能据此宣称完整模拟器流程通过。使用独立测试环境和 Linux/KVM CI 继续验证。
+首次模拟器开机出现的 GMS/System UI 无响应对话框发生在游戏安装前；游戏自身未见 ANR。Windows 宿主的软件渲染模式曾反复发生 access violation（0xc0000005）；切换 host 渲染后完整启动检查通过。独立缓存还准备了官方新稳定 Emulator37.2.12，未修改原 SDK；Linux/KVM CI 将验证相同自动化流程。
 
 ## 仍待验证
 
