@@ -1,0 +1,43 @@
+name: Publish validated Android candidate
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '已完成真机验收的候选标签，例如 android-v0.1.2-100001'
+        required: true
+        type: string
+      validated:
+        description: '已验证离线完整对局、覆盖升级、双设备联机、锁屏和 Doze'
+        required: true
+        default: false
+        type: boolean
+permissions:
+  contents: write
+concurrency:
+  group: android-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: inputs.validated
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify unchanged candidate before publishing
+        env:
+          TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module -e "if (!/^android-v\d+\.\d+\.\d+-\d+$/.test(process.env.TAG)) throw Error('invalid candidate tag')"
+          mkdir candidate
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir candidate --pattern '*.apk' --pattern '*.apk.sha256' --pattern '*.apk.json'
+          sdkmanager 'build-tools;36.1.0'
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" > candidate/releases.json
+          node mobile/ci/verify-candidate.mjs candidate candidate/releases.json
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest

@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "repository": "google/fonts",
+  "commit": "9710da1eacb3be272583c3224dcb70f9da6eadbb",
+  "files": [
+    {
+      "role": "font",
+      "family": "Noto Sans SC",
+      "filename": "noto-sans-sc.ttf",
+      "weight": "400 900",
+      "format": "truetype",
+      "sourcePath": "ofl/notosanssc/NotoSansSC[wght].ttf",
+      "url": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf",
+      "gitBlob": "fb0637bafbcd804fe32152370a1225990745b4bc",
+      "size": 17772300,
+      "sha256": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da"
+    },
+    {
+      "role": "license",
+      "family": "Noto Sans SC",
+      "filename": "noto-sans-sc-OFL.txt",
+      "sourcePath": "ofl/notosanssc/OFL.txt",
+      "url": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/notosanssc/OFL.txt",
+      "gitBlob": "1c9f43281b8f216c5461fe9ac729afbade7724e4",
+      "size": 4388,
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+    },
+    {
+      "role": "font",
+      "family": "Oxanium",
+      "filename": "oxanium.ttf",
+      "weight": "400 700",
+      "format": "truetype",
+      "sourcePath": "ofl/oxanium/Oxanium[wght].ttf",
+      "url": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/oxanium/Oxanium%5Bwght%5D.ttf",
+      "gitBlob": "ead485c7bf517197db91ef657614ac37d8007775",
+      "size": 43536,
+      "sha256": "2ce01d946e1e1ffc8d7eecfffbda8623bedd63eaf811a20488c4b69af45babb0"
+    },
+    {
+      "role": "license",
+      "family": "Oxanium",
+      "filename": "oxanium-OFL.txt",
+      "sourcePath": "ofl/oxanium/OFL.txt",
+      "url": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/oxanium/OFL.txt",
+      "gitBlob": "38913c09407f12006ade3c8391bc3ad48fadc4ee",
+      "size": 4384,
+      "sha256": "fe17c0f2581d71b4e1ea7e636e7f4877c29223e11bb1dd1a871e8c3f2a86336b"
+    },
+    {
+      "role": "font",
+      "family": "Rajdhani",
+      "filename": "rajdhani-medium.ttf",
+      "weight": "500",
+      "format": "truetype",
+      "sourcePath": "ofl/rajdhani/Rajdhani-Medium.ttf",
+      "url": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/rajdhani/Rajdhani-Medium.ttf",
+      "gitBlob": "a6960c6d7f50f57de0bb117158626f3c31edad9a",
+      "size": 384348,
+      "sha256": "12ff7dcfe4c206e3875ac53b1762eab57de6a2fa7f5a86c26b97b88d6591eac2"
+    },
+    {
+      "role": "font",
+      "family": "Rajdhani",
+      "filename": "rajdhani-semibold.ttf",
+      "weight": "600",
+      "format": "truetype",
+      "sourcePath": "ofl/rajdhani/Rajdhani-SemiBold.ttf",
+      "url": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/rajdhani/Rajdhani-SemiBold.ttf",
+      "gitBlob": "d43750bd05c130d36c8e7fbeb06ecd7c5d3c3b17",
+      "size": 390340,
+      "sha256": "94bbd25a18ca665999feb05a537de9fd2b860dcfb78bbe9ca00270825bf235da"
+    },
+    {
+      "role": "font",
+      "family": "Rajdhani",
+      "filename": "rajdhani-bold.ttf",
+      "weight": "700",
+      "format": "truetype",
+      "sourcePath": "ofl/rajdhani/Rajdhani-Bold.ttf",
+      "url": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/rajdhani/Rajdhani-Bold.ttf",
+      "gitBlob": "47af15713b45605a5d98241b8211a3409f522b34",
+      "size": 400680,
+      "sha256": "691470dd3286a14e9677940d0bf75796179841ba5215cbda1a2c8910a3226afd"
+    },
+    {
+      "role": "license",
+      "family": "Rajdhani",
+      "filename": "rajdhani-OFL.txt",
+      "sourcePath": "ofl/rajdhani/OFL.txt",
+      "url": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/rajdhani/OFL.txt",
+      "gitBlob": "6dd809659a8ccace7ccee108d024d33cd4f936da",
+      "size": 4373,
+      "sha256": "f62ef357d3a1c3d27edd35a6e1ba350e8a8d13499797964eeadefbf0b3b15d1f"
+    }
+  ]
+}

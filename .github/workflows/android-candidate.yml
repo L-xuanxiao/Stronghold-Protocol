@@ -1,0 +1,268 @@
+name: Android candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      use_locked_game:
+        description: '使用当前 game.lock.json 构建恢复包；需先恢复上一稳定游戏的锁文件'
+        type: boolean
+        default: false
+  schedule:
+    - cron: '17 4 * * *'
+  push:
+    branches: [codex/android]
+    paths:
+      - 'mobile/**'
+      - 'test/mobile*.test.js'
+      - '.github/workflows/android-candidate.yml'
+
+permissions:
+  contents: read
+concurrency:
+  group: android-candidate
+  cancel-in-progress: false
+
+jobs:
+  sync-master:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Keep original branch in sync without forcing divergent history
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh repo sync "$GITHUB_REPOSITORY" --source sganggs/Stronghold-Protocol --branch master
+
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.check.outputs.changed == 'true' || github.event_name != 'schedule' }}
+      version: ${{ steps.check.outputs.version }}
+      code: ${{ steps.code.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - id: check
+        run: |
+          if [ "$USE_LOCKED_GAME" = 'true' ]; then
+            node mobile/ci/check-upstream.mjs --locked
+          else
+            node mobile/ci/check-upstream.mjs --write
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+          USE_LOCKED_GAME: ${{ github.event_name == 'workflow_dispatch' && inputs.use_locked_game }}
+      - id: code
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$RUNNER_TEMP/android-releases.json"
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import { allocateVersionCode } from './mobile/ci/candidate-policy.mjs';
+          const file = 'mobile/version.json';
+          const version = JSON.parse(fs.readFileSync(file));
+          const releases = JSON.parse(fs.readFileSync(path.join(process.env.RUNNER_TEMP, 'android-releases.json'))).flat();
+          version.versionCode = allocateVersionCode(version.versionCode, Number(process.env.GITHUB_RUN_NUMBER), releases);
+          fs.writeFileSync(file, JSON.stringify(version, null, 2) + '\n');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `code=${version.versionCode}\n`);
+          JS
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: candidate-lock
+          path: |
+            mobile/game.lock.json
+            mobile/version.json
+
+  build:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      GRADLE_USER_HOME: ${{ github.workspace }}/.cache/gradle
+      SP_E2E: '0'
+      SP_REAL_E2E: '0'
+      RENDER_E2E: '0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: candidate-lock
+          path: mobile
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .cache/mobile/downloads
+            .cache/mobile/licenses
+            .cache/mobile/official-*.zip
+            .cache/mobile/*.zip
+            .cache/mobile/fonts
+            .cache/gradle
+          key: android-${{ runner.os }}-${{ hashFiles('mobile/runtime.lock.json', 'mobile/fonts.lock.json', 'mobile/game.lock.json', 'mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Fetch locked author source
+        run: |
+          tag=$(node -p "JSON.parse(require('fs').readFileSync('mobile/game.lock.json')).tag")
+          git remote add upstream https://github.com/sganggs/Stronghold-Protocol.git
+          git fetch --no-tags upstream "refs/tags/$tag"
+      - name: Tooling tests
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          node --test test/mobile*.test.js
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Restore archived runtime inputs
+        run: node mobile/ci/restore-runtime.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Prepare ARM64 game and runtime
+        run: |
+          node mobile/tools/prepare.mjs --abi=arm64-v8a
+          cp mobile/build/build.json mobile/build/phone-build.json
+      - name: Author tests at locked commit
+        run: |
+          commit=$(node -p "JSON.parse(require('fs').readFileSync('mobile/game.lock.json')).commit")
+          cd ".cache/mobile/source/$commit"
+          # 上游含严格计时断言，文件串行执行以避免测试间争用 CPU。
+          node --test --test-concurrency=1
+      - name: Android toolchain
+        run: |
+          sdkmanager 'platforms;android-36.1' 'build-tools;36.1.0'
+          chmod +x mobile/android/gradlew
+      - name: Build unsigned phone APK
+        working-directory: mobile/android
+        env:
+          CODE: ${{ needs.check.outputs.code }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          ./gradlew :app:assembleRelease :app:testDebugUnitTest :app:lintRelease --console=plain --no-daemon -PcompileSdk=android-36.1 -PgameAbi=arm64-v8a -PmobileVersionCode="$CODE" -PgameVersion="$VERSION"
+      - name: Prepare emulator runtime
+        run: node mobile/tools/prepare.mjs --abi=x86_64 --runtime-only
+      - name: Build emulator APK
+        working-directory: mobile/android
+        env:
+          CODE: ${{ needs.check.outputs.code }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.cache/android-signing"
+          keytool -genkeypair -keystore "$GITHUB_WORKSPACE/.cache/android-signing/debug.keystore" -alias androiddebugkey -storepass android -keypass android -dname 'CN=Android Debug' -keyalg RSA -validity 10000
+          ./gradlew :app:assembleDebug --console=plain --no-daemon -PcompileSdk=android-36.1 -PgameAbi=x86_64 -PmobileVersionCode="$CODE" -PgameVersion="$VERSION"
+      - name: Allow emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Android 16 / 16 KB offline smoke
+        uses: reactivecircus/android-emulator-runner@c9c93e6ba9c4194322e114c40970d5983d9a07cc # v2.38.0
+        with:
+          api-level: 36
+          arch: x86_64
+          tag: google_apis_ps16k
+          disable-animations: true
+          script: node mobile/ci/emulator-smoke.mjs mobile/android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Candidate source and metadata
+        run: |
+          mkdir -p mobile/build/candidate
+          cp mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk mobile/build/candidate/
+          cp mobile/game.lock.json mobile/version.json mobile/runtime.lock.json mobile/fonts.lock.json mobile/build/candidate/
+          cp mobile/build/phone-build.json mobile/build/candidate/build.json
+          node mobile/tools/runtime-inputs.mjs export --file=mobile/build/candidate/runtime-inputs.zip --offline
+          commit=$(node -p "JSON.parse(require('fs').readFileSync('mobile/game.lock.json')).commit")
+          git archive --format=tar.gz --output=mobile/build/candidate/upstream-source.tar.gz "$commit"
+          git archive --format=zip --output=mobile/build/candidate/mobile-source.zip HEAD
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: unsigned-candidate
+          path: mobile/build/candidate
+          retention-days: 30
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: android-qa
+          path: |
+            mobile/build/qa
+            mobile/android/app/build/reports
+
+  sign:
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # 此作业不执行作者 npm 脚本、游戏代码或 unsigned 作业生成的脚本。
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: unsigned-candidate
+          path: mobile/build/candidate
+      - name: Load verified candidate metadata
+        run: |
+          cp mobile/build/candidate/game.lock.json mobile/game.lock.json
+          cp mobile/build/candidate/version.json mobile/version.json
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Signing toolchain
+        run: sdkmanager 'build-tools;36.1.0'
+      - name: Sign and verify
+        env:
+          SP_SIGN_STORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          SP_SIGN_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          SP_SIGN_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          SP_SIGN_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          VERSION: ${{ needs.check.outputs.version }}
+          CODE: ${{ needs.check.outputs.code }}
+        run: node mobile/ci/sign.mjs mobile/build/candidate/app-release-unsigned.apk "mobile/build/release/Stronghold-Protocol-$VERSION-android.$CODE-arm64-v8a.apk"
+      - name: Create draft release and retain locked version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.check.outputs.version }}
+          CODE: ${{ needs.check.outputs.code }}
+        run: |
+          tag="android-v$VERSION-$CODE"
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Android $VERSION / $CODE 候选" --notes-file mobile/RELEASE-NOTES.md
+          gh release upload "$tag" --repo "$GITHUB_REPOSITORY" mobile/build/release/* mobile/build/candidate/game.lock.json mobile/build/candidate/version.json mobile/build/candidate/runtime.lock.json mobile/build/candidate/fonts.lock.json mobile/build/candidate/build.json mobile/build/candidate/upstream-source.tar.gz mobile/build/candidate/mobile-source.zip mobile/build/candidate/runtime-inputs.zip
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mobile/game.lock.json mobile/version.json
+          if ! git diff --cached --quiet; then git commit -m "Record Android candidate $tag"; git push origin HEAD:codex/android; fi
+
+  heartbeat:
+    needs: check
+    if: github.event_name == 'schedule' && needs.check.outputs.build != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - name: Monthly scheduling record
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const file = 'mobile/update-status.json', month = new Date().toISOString().slice(0, 7);
+          const old = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : {};
+          if (old.month !== month) fs.writeFileSync(file, JSON.stringify({ month, checkedAt: new Date().toISOString() }, null, 2) + '\n');
+          JS
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mobile/update-status.json
+          if ! git diff --cached --quiet; then git commit -m 'Record monthly upstream check'; git push origin HEAD:codex/android; fi

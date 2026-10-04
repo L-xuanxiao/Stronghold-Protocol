@@ -1,0 +1,203 @@
+{
+  "schema": 1,
+  "sourceRepository": "https://github.com/termux/termux-packages",
+  "minimumAndroid": 24,
+  "metadata": {
+    "arm64-v8a": {
+      "url": "https://packages.termux.dev/apt/termux-main/dists/stable/main/binary-aarch64/Packages",
+      "sha256": "0f27863e6f37327d6696bc7597ecaa90074a3180332a6dfa29c8d7b38412ee83",
+      "transport": "HTTPS",
+      "retrievedAt": "2026-10-04T08:05:46.071Z"
+    },
+    "x86_64": {
+      "url": "https://packages.termux.dev/apt/termux-main/dists/stable/main/binary-x86_64/Packages",
+      "sha256": "5443e6eea91b8cf88c8c47cbc0001fe707e6ebd5234d7dd1f8a926bc54f86a5d",
+      "transport": "HTTPS",
+      "retrievedAt": "2026-10-04T08:05:46.099Z"
+    }
+  },
+  "abis": {
+    "arm64-v8a": {
+      "arch": "aarch64",
+      "nodeVersion": "24.18.0",
+      "packages": [
+        {
+          "name": "nodejs-lts",
+          "version": "24.18.0-1",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/n/nodejs-lts/nodejs-lts_24.18.0-1_aarch64.deb",
+          "size": 9743764,
+          "sha256": "490f4d08c45b25a7ea7db6ee466ebb3ee61f07083260b85332704ed018f59a87",
+          "depends": "libc++, openssl, c-ares, libicu, libsqlite, zlib",
+          "homepage": "https://nodejs.org/"
+        },
+        {
+          "name": "libc++",
+          "version": "30",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/libc/libc%2B%2B/libc%2B%2B_30_aarch64.deb",
+          "size": 341604,
+          "sha256": "53d0b84a7ba7459024257cb94d5b136fe13ef858567f65a8064b35950799f2ca",
+          "depends": "",
+          "homepage": "https://libcxx.llvm.org/"
+        },
+        {
+          "name": "openssl",
+          "version": "1:3.6.5",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/o/openssl/openssl_1%3A3.6.5_aarch64.deb",
+          "size": 2482764,
+          "sha256": "a2fb7856875e63ef6b90442752e05974813372c3ca86d2513a78ea43c67a0f8b",
+          "depends": "ca-certificates, zlib",
+          "homepage": "https://www.openssl.org/"
+        },
+        {
+          "name": "c-ares",
+          "version": "1.34.8",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/c/c-ares/c-ares_1.34.8_aarch64.deb",
+          "size": 194924,
+          "sha256": "7681fc23e822d7988ba8b2adf3468f93ae68f724dda365cff1385096a9fa87e6",
+          "depends": "resolv-conf",
+          "homepage": "https://c-ares.org/"
+        },
+        {
+          "name": "libicu",
+          "version": "78.3",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/libi/libicu/libicu_78.3_aarch64.deb",
+          "size": 10210396,
+          "sha256": "f536403f65a08fe0df6e7304184e902d54def77d5c3bd5edfd9109d57601d276",
+          "depends": "libc++",
+          "homepage": "http://site.icu-project.org/home"
+        },
+        {
+          "name": "libsqlite",
+          "version": "3.53.4",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/libs/libsqlite/libsqlite_3.53.4_aarch64.deb",
+          "size": 759764,
+          "sha256": "0e909ce0d50fe123305446cd22e0c5edf535d40344b9b065fbdcdee52f53198d",
+          "depends": "zlib",
+          "homepage": "https://www.sqlite.org"
+        },
+        {
+          "name": "zlib",
+          "version": "1.3.2",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/z/zlib/zlib_1.3.2_aarch64.deb",
+          "size": 62840,
+          "sha256": "75e7d0af17fcc3b40004309fdc00a1ddb9ae08346dce5e269902c34ac3966ac9",
+          "depends": "",
+          "homepage": "https://www.zlib.net/"
+        }
+      ]
+    },
+    "x86_64": {
+      "arch": "x86_64",
+      "nodeVersion": "24.18.0",
+      "packages": [
+        {
+          "name": "nodejs-lts",
+          "version": "24.18.0-1",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/n/nodejs-lts/nodejs-lts_24.18.0-1_x86_64.deb",
+          "size": 10160144,
+          "sha256": "2a41c61c609993a7d897fed130adf4d6debb0b30713ab85bb47c2fc8373458ba",
+          "depends": "libc++, openssl, c-ares, libicu, libsqlite, zlib",
+          "homepage": "https://nodejs.org/"
+        },
+        {
+          "name": "libc++",
+          "version": "30",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/libc/libc%2B%2B/libc%2B%2B_30_x86_64.deb",
+          "size": 367792,
+          "sha256": "c9bcd9a8067a19c9c0e4893a72d314a2e37d6b67ce8dd05c67b9bbacad044b4f",
+          "depends": "",
+          "homepage": "https://libcxx.llvm.org/"
+        },
+        {
+          "name": "openssl",
+          "version": "1:3.6.5",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/o/openssl/openssl_1%3A3.6.5_x86_64.deb",
+          "size": 2164136,
+          "sha256": "540f144592d23d35672976e175ede1b5d8cf464f153f646df5d4e6dcd8491a15",
+          "depends": "ca-certificates, zlib",
+          "homepage": "https://www.openssl.org/"
+        },
+        {
+          "name": "c-ares",
+          "version": "1.34.8",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/c/c-ares/c-ares_1.34.8_x86_64.deb",
+          "size": 205512,
+          "sha256": "c5d6194d69a04089040ca50dad96ed7df8773bd3c3d7c4be7d1dd5661ceae6b4",
+          "depends": "resolv-conf",
+          "homepage": "https://c-ares.org/"
+        },
+        {
+          "name": "libicu",
+          "version": "78.3",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/libi/libicu/libicu_78.3_x86_64.deb",
+          "size": 10304856,
+          "sha256": "19fa8c4d828719f465d523983b1e0d833e4130bb22790104638965d97e27fe60",
+          "depends": "libc++",
+          "homepage": "http://site.icu-project.org/home"
+        },
+        {
+          "name": "libsqlite",
+          "version": "3.53.4",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/libs/libsqlite/libsqlite_3.53.4_x86_64.deb",
+          "size": 805780,
+          "sha256": "c2801581e7c656aec11153e5ef42179b9f8db8b9739fb6706899b93fa2655e6e",
+          "depends": "zlib",
+          "homepage": "https://www.sqlite.org"
+        },
+        {
+          "name": "zlib",
+          "version": "1.3.2",
+          "url": "https://packages.termux.dev/apt/termux-main/pool/main/z/zlib/zlib_1.3.2_x86_64.deb",
+          "size": 73316,
+          "sha256": "c61b089dd30981452f5953b2bad4c4e7857062b2abd971f87fb0aec441bc02f4",
+          "depends": "",
+          "homepage": "https://www.zlib.net/"
+        }
+      ]
+    }
+  },
+  "licenses": [
+    {
+      "name": "Node.txt",
+      "url": "https://raw.githubusercontent.com/nodejs/node/v24.18.0/LICENSE",
+      "size": 157606,
+      "sha256": "148eacf7863ef4329224a29398623077200a27194aa075569faf4a0a85566ca5"
+    },
+    {
+      "name": "c-ares.txt",
+      "url": "https://raw.githubusercontent.com/c-ares/c-ares/v1.34.8/LICENSE.md",
+      "size": 1211,
+      "sha256": "460f5e768fda3752ca2169a95df062578a10fb126bfd65f3b9b1a1bed2f84807"
+    },
+    {
+      "name": "OpenSSL.txt",
+      "url": "https://raw.githubusercontent.com/openssl/openssl/openssl-3.6.5/LICENSE.txt",
+      "size": 10175,
+      "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+    },
+    {
+      "name": "ICU.txt",
+      "url": "https://raw.githubusercontent.com/unicode-org/icu/release-78.3/icu4c/LICENSE",
+      "size": 10,
+      "sha256": "1e881ecf2862d01e6e5bc2b861e46886d2a6fb01499c0c508a209a7271b13cf2"
+    },
+    {
+      "name": "zlib.txt",
+      "url": "https://raw.githubusercontent.com/madler/zlib/v1.3.2/LICENSE",
+      "size": 1002,
+      "sha256": "e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2"
+    },
+    {
+      "name": "libcxx.txt",
+      "url": "https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-21.1.0/libcxx/LICENSE.TXT",
+      "size": 16703,
+      "sha256": "539dd7aed86e8a4f12cbdd0e6c50c189c7d74847e4fecc64ce2c6ee3a01da38b"
+    },
+    {
+      "name": "SQLite.html",
+      "url": "https://www.sqlite.org/copyright.html",
+      "size": 8351,
+      "sha256": "44ca9f793055c8e32fc65f65a4f5bcf813a33f5bdaaa084067dd617a4ed3cc70"
+    }
+  ]
+}

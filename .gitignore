@@ -37,3 +37,12 @@ desktop.ini
 .idea/
 .vscode/
 .claude/
+
+# Android 构建产物与私钥；素材继续只进入 APK，不进入 Git。
+mobile/build/
+mobile/android/.gradle/
+mobile/android/**/build/
+mobile/android/local.properties
+mobile/keystore/
+*.jks
+*.keystore

@@ -1,0 +1,87 @@
+plugins { id 'com.android.application' }
+
+def gameAssets = file(providers.gradleProperty('gameAssetsDir').getOrElse('../../build/assets'))
+def runtime = file(providers.gradleProperty('runtimeDir').getOrElse('../../build/jniLibs'))
+def gameAbi = providers.gradleProperty('gameAbi').getOrElse('arm64-v8a')
+def mobileCode = providers.gradleProperty('mobileVersionCode').getOrElse('1')
+if (!(mobileCode ==~ /[1-9][0-9]{0,9}/) || mobileCode.toLong() > 2100000000L) {
+    throw new GradleException('mobileVersionCode must be a positive Android version code')
+}
+def gameVersion = providers.gradleProperty('gameVersion').getOrElse('0.1.2')
+if (!(gameVersion ==~ /[A-Za-z0-9._+-]{1,64}/)) {
+    throw new GradleException('Invalid gameVersion')
+}
+if (!(gameAbi in ['arm64-v8a', 'x86_64'])) {
+    throw new GradleException('gameAbi must use a 64-bit Android ABI')
+}
+
+android {
+    namespace 'io.github.strongholdprotocol.mobile'
+    compileSdkVersion providers.gradleProperty('compileSdk').getOrElse('android-36')
+    buildToolsVersion providers.gradleProperty('buildToolsVersion').getOrElse('36.1.0')
+
+    defaultConfig {
+        applicationId 'io.github.strongholdprotocol.mobile'
+        minSdk 24
+        targetSdk 36
+        versionCode mobileCode.toInteger()
+        versionName gameVersion + '-android.' + mobileCode
+        buildConfigField 'String', 'GAME_VERSION', '"' + gameVersion + '"'
+        ndk { abiFilters gameAbi }
+    }
+    signingConfigs {
+        debug {
+            storeFile file(providers.gradleProperty('debugKeystore').getOrElse('../../../.cache/android-signing/debug.keystore'))
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+    buildTypes {
+        debug { signingConfig signingConfigs.debug }
+        release { minifyEnabled false }
+    }
+    sourceSets {
+        main { assets.srcDirs = [gameAssets]; jniLibs.srcDirs = [runtime] }
+    }
+    buildFeatures { buildConfig true }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    packaging {
+        // Node 是可执行 ELF；安装时必须解压到系统允许执行的 nativeLibraryDir。
+        jniLibs { useLegacyPackaging true; keepDebugSymbols += ['**/*.so'] }
+    }
+    androidResources { noCompress += ['zip'] }
+    lint { abortOnError true }
+}
+
+tasks.register('verifyGameInputs') {
+    inputs.files(new File(gameAssets, 'game.zip'), new File(gameAssets, 'game-manifest.json'))
+    inputs.dir(new File(runtime, gameAbi))
+    doLast {
+        if (!new File(gameAssets, 'game.zip').isFile() || !new File(gameAssets, 'game-manifest.json').isFile()) {
+            throw new GradleException('Prepare gameAssetsDir/game.zip and game-manifest.json first')
+        }
+        if (!new File(runtime, gameAbi + '/libnode.so').isFile()) {
+            throw new GradleException('Prepare runtimeDir/' + gameAbi + '/libnode.so first')
+        }
+        def manifest = new groovy.json.JsonSlurper().parse(new File(gameAssets, 'game-manifest.json'))
+        if (manifest.schema != 1 || manifest.gameVersion != gameVersion) {
+            throw new GradleException('Game manifest version must match -PgameVersion')
+        }
+    }
+}
+tasks.named('preBuild').configure { dependsOn 'verifyGameInputs' }
+tasks.withType(Test).configureEach {
+    // 测试目录留在工程内，便于受限沙箱执行安全的目录切换验证。
+    def testTemp = layout.buildDirectory.dir('test-temp').get().asFile
+    systemProperty 'java.io.tmpdir', testTemp.absolutePath
+    doFirst { testTemp.mkdirs() }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20250517'
+}
