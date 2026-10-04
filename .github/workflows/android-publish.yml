@@ -37,7 +37,7 @@ jobs:
           node --input-type=module -e "if (!/^android-v\d+\.\d+\.\d+-\d+$/.test(process.env.TAG)) throw Error('invalid candidate tag')"
           mkdir candidate
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir candidate --pattern '*.apk' --pattern '*.apk.sha256' --pattern '*.apk.json'
-          sdkmanager 'build-tools;36.1.0'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;36.1.0'
           gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" > candidate/releases.json
           node mobile/ci/verify-candidate.mjs candidate candidate/releases.json
           gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest

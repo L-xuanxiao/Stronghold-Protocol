@@ -139,7 +139,7 @@ jobs:
           node --test --test-concurrency=1
       - name: Android toolchain
         run: |
-          sdkmanager 'platforms;android-36.1' 'build-tools;36.1.0'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36.1' 'build-tools;36.1.0'
           chmod +x mobile/android/gradlew
       - name: Build unsigned phone APK
         working-directory: mobile/android
@@ -219,7 +219,8 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Signing toolchain
-        run: sdkmanager 'build-tools;36.1.0'
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;36.1.0'
       - name: Sign and verify
         env:
           SP_SIGN_STORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
