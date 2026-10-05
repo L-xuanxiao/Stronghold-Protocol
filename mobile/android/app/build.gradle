@@ -25,7 +25,7 @@ android {
         minSdk 24
         targetSdk 36
         versionCode mobileCode.toInteger()
-        versionName gameVersion + '-android.' + mobileCode
+        versionName gameVersion
         buildConfigField 'String', 'GAME_VERSION', '"' + gameVersion + '"'
         ndk { abiFilters gameAbi }
     }

@@ -7,7 +7,7 @@ export function parseCandidateTag(tag) {
 }
 
 export function allocateVersionCode(current, run, releases) {
-  const used = releases.map(release => /^android-v\d+\.\d+\.\d+-([1-9]\d*)$/.exec(release.tag_name)?.[1])
+  const used = releases.map(release => /^(?:inputs-)?android-v\d+\.\d+\.\d+-([1-9]\d*)$/.exec(release.tag_name)?.[1])
     .filter(Boolean).map(Number);
   const next = Math.max(current + 1, 100000 + run, ...used.map(code => code + 1));
   if (!Number.isSafeInteger(current) || current < 1 || !Number.isSafeInteger(run) || run < 1 ||
@@ -22,7 +22,7 @@ export function verifyPackage(metadata, badging, tag) {
     throw new Error('candidate metadata does not match its release tag');
   }
   if (!actual || actual[1] !== metadata.mobile.applicationId || Number(actual[2]) !== expected.code ||
-      actual[3] !== `${expected.version}-android.${expected.code}`) {
+      actual[3] !== expected.version) {
     throw new Error('actual APK package or version does not match candidate metadata');
   }
 }

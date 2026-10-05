@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   sync-master:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
@@ -34,7 +34,7 @@ jobs:
         run: gh repo sync "$GITHUB_REPOSITORY" --source sganggs/Stronghold-Protocol --branch master
 
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       build: ${{ steps.check.outputs.changed == 'true' || github.event_name != 'schedule' }}
       version: ${{ steps.check.outputs.version }}
@@ -81,7 +81,7 @@ jobs:
   build:
     needs: check
     if: needs.check.outputs.build == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 70
     env:
       GRADLE_USER_HOME: ${{ github.workspace }}/.cache/gradle
@@ -210,7 +210,7 @@ jobs:
 
   sign:
     needs: [check, build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
@@ -242,7 +242,7 @@ jobs:
           SP_SIGN_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           VERSION: ${{ needs.check.outputs.version }}
           CODE: ${{ needs.check.outputs.code }}
-        run: node mobile/ci/sign.mjs mobile/build/candidate/app-release-unsigned.apk "mobile/build/release/Stronghold-Protocol-$VERSION-android.$CODE-arm64-v8a.apk"
+        run: node mobile/ci/sign.mjs mobile/build/candidate/app-release-unsigned.apk "mobile/build/release/Stronghold-Protocol-$VERSION-arm64-v8a.apk"
       - name: Create draft release and retain locked version
         env:
           GH_TOKEN: ${{ github.token }}
@@ -250,7 +250,7 @@ jobs:
           CODE: ${{ needs.check.outputs.code }}
         run: |
           tag="android-v$VERSION-$CODE"
-          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Android $VERSION / $CODE 候选" --notes-file mobile/RELEASE-NOTES.md
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Android $VERSION 候选" --notes-file mobile/RELEASE-NOTES.md
           gh release upload "$tag" --repo "$GITHUB_REPOSITORY" mobile/build/release/* mobile/build/candidate/game.lock.json mobile/build/candidate/version.json mobile/build/candidate/runtime.lock.json mobile/build/candidate/fonts.lock.json mobile/build/candidate/build.json mobile/build/candidate/upstream-source.tar.gz mobile/build/candidate/mobile-source.zip mobile/build/candidate/runtime-inputs.zip
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -260,7 +260,7 @@ jobs:
   heartbeat:
     needs: check
     if: github.event_name == 'schedule' && needs.check.outputs.build != 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:

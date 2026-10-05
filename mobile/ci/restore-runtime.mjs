@@ -13,8 +13,8 @@ const response = await fetch(`https://api.github.com/repos/${repository}/release
 });
 if (!response.ok) throw new Error(`runtime archive release query failed: ${response.status}`);
 const releases = await response.json();
-// 草稿已含校验过的输入备份；在真机验收前也可用于重建，避免旧 Termux 包被轮换。
-const release = releases.find(r => !r.prerelease && /^android-v\d+\.\d+\.\d+-\d+$/.test(r.tag_name) &&
+// 候选和 inputs- 构建备份草稿都保留输入，避免旧 Termux 包被轮换。
+const release = releases.find(r => !r.prerelease && /^(?:inputs-)?android-v\d+\.\d+\.\d+-\d+$/.test(r.tag_name) &&
   r.assets.some(a => a.name === 'runtime-inputs.zip'));
 if (!release) {
   console.log('No published runtime input kit yet; using checksum-locked official packages.');
