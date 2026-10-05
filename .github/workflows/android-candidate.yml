@@ -174,7 +174,7 @@ jobs:
           ram-size: 4096M
           disk-size: 8192M
           # WebView 使用 GLES；关闭无头宿主的 Vulkan 路径，保留硬件加速和 16 KB 镜像。
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -feature -Vulkan
+          emulator-options: -no-window -gpu swangle -no-snapshot -noaudio -no-boot-anim -feature -Vulkan
           disable-animations: true
           script: node mobile/ci/emulator-smoke.mjs mobile/android/app/build/outputs/apk/debug/app-debug.apk
       - name: Emulator failure diagnostics
@@ -184,7 +184,7 @@ jobs:
           free -m > mobile/build/qa/host-memory.txt
           df -h > mobile/build/qa/host-storage.txt
           ps -eo pid,comm,rss --sort=-rss > mobile/build/qa/host-processes.txt
-          dmesg --time-format=iso > mobile/build/qa/host-kernel.txt 2>&1 || true
+          sudo dmesg --time-format=iso > mobile/build/qa/host-kernel.txt 2>&1 || true
       - name: Candidate source and metadata
         run: |
           mkdir -p mobile/build/candidate
