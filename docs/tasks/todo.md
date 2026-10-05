@@ -21,19 +21,19 @@
 - [x] iQOO 15 / Android16 安装长期签名 ARM64 包，验证断网单人入局、选定干员模型和用户耳听。
 - [ ] 真机完整结算、正式签名覆盖升级/备份、双设备联机、锁屏、Doze、网络切换（用户已终止剩余真机测试，保留待验证）。
 - [x] 推送 fork，配置默认分支、启用工作流和长期签名 Secrets。
-- [x] 云端候选流水线全链路通过，交付 APK、源码与验证记录，保留草稿状态。
+- [x] 云端候选流水线全链路通过，交付 APK、源码与验证记录；完整构建信息保留草稿，按后续授权正式发布 APK。
 - [ ] 将长期签名密钥目录备份到离线介质（需用户提供介质）。
 
 ### 2026-10-05 发布要求调整
 
 - [x] 去掉 APK 文件名及安装界面版本文字中的内部升级序号；保留递增 versionCode 和长期签名。
-- [ ] 更新包内版本检查及负向验证，重新构建、签名并验证实际 APK。
-- [ ] 将源码、锁文件与运行时输入保留在构建备份草稿，公开 Release 仅提供 APK。
-- [ ] 按用户明确授权正式发布，核对公开附件摘要、下载地址和验证记录；不恢复真机测试。
+- [x] 更新包内版本检查及负向验证，重新构建、签名并验证实际 APK。
+- [x] 将源码、锁文件与运行时输入保留在构建备份草稿，公开 Release 仅提供 APK。
+- [x] 按用户明确授权正式发布，核对公开附件摘要、下载地址和验证记录；不恢复真机测试。
 
 ## 结果审查
 
-实现与候选交付已完成，正式设备验收未完成。原工作树基线 bdb0765；手机已测试的首版单独锁定作者 v0.1.2 / 9d404199df76f862eff7385b82f952ab0498f4c5。2026-10-05 工作流自动检测并构建作者 v0.1.3 / a0a5419eb875fb24de62e4dfb32b78cfcb3090be，code100006 草稿已生成。保留工作树 data/assets.json 改动，不将其用于候选打包。fork 默认分支为 codex/android，两个 Android 工作流已启用，四项长期签名 Secrets 已配置。
+已正式发布 v0.1.3，完整设备验收仍未完成。原工作树基线 bdb0765；手机已测试的首版单独锁定作者 v0.1.2 / 9d404199df76f862eff7385b82f952ab0498f4c5。2026-10-05 自动检测并构建作者 v0.1.3 / a0a5419eb875fb24de62e4dfb32b78cfcb3090be；首轮 code100006 仅为草稿，最终 code100007 以简洁文件名和版本文字正式发布。保留工作树 data/assets.json 改动，不将其用于候选打包。fork 默认分支为 codex/android，两个 Android 工作流已启用，四项长期签名 Secrets 已配置。
 
 - 完整 Node 测试：3493 通过、17 跳过；受限 Windows TEMP 导致的首轮目录切换错误，通过将测试临时目录放在仓库缓存并限制并发解决，未放宽测试断言。
 - 锁定 v0.1.2 独立源码测试：3458 通过、10 跳过；1 项严格性能计时在并行负载下失败，同源码独占运行后通过（best 0.341 ms/tick，原阈值 0.5）。CI 改为文件串行运行，未修改游戏或断言。
@@ -53,6 +53,10 @@
 - 下载候选后再次验证实际签名、包名/版本、minSDK24/target36、仅 ARM64 与 16 KB ZIP 对齐；SHA256=cb546ff035efd81a61b510237519e60c077ab1617be7fd7358fba2a5c51eef23 与签名作业及 GitHub 附件摘要一致，12 个草稿附件完整，汇总 mobile/build/qa/cloud-validation.json。
 - 真机 iQOO 15 / Android16 已安装并运行长期签名 APK，实际页大小 4096；断网无默认网络、单人对局、选定干员模型已观察，背景音乐和音效由用户确认听得到。首次安装/解压时手机有网，不宣称真机清数据首次离线解压通过。
 - 用户于 2026-10-04 明确终止后续真机测试；已停止手机操作和观察，不再等待结算或安装更高版本。2026-10-05 用户进一步授权完成后正式发布且仅提供 APK，未执行的验收仍保留待验证。发布确认改为审核验证记录及剩余项目，不假称全部真机验收通过。证据在忽略目录 mobile/build/qa/physical-validation.json；设备序列号与昵称不写入公开文档。
+- 最终命名修改后的[构建](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/37252774947)通过：上游源码 3611 通过/10 跳过，移动工具 20 通过/0 跳过，Android 单元 15 通过，lint 0 errors/5 warnings；当前四组原有 CI 全部通过。16 KB 模拟器清数据离线启动、入大厅和 Activity 重建通过，app3937/Node4441 不变，uptime7→11。
+- [正式发布](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.1.3-100007)仅 1 个上传附件：Stronghold-Protocol-0.1.3-arm64-v8a.apk，429819574 bytes。包内 versionName=0.1.3、内部 versionCode=100007；下载后实际证书/包名/版本/min24/target36/ARM64/16 KB ZIP 对齐通过，SHA256=c939838a375aeaf62593d7ad63ebe00773f99fffa8ded38b2577c4121835e486，与公开附件一致。
+- [发布作业](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/37253812838)完成公开前校验及公开后唯一附件/摘要断言；原候选已改为 inputs-android-v0.1.3-100007 构建备份草稿，12 个完整附件保留。新版未安装到手机；公开发布不代表补齐了剩余真机验收。
+- 正式发布后实际从该备份草稿恢复 21 个运行时输入，skipped/missing 为空、kitMatchesCurrentLock=true；未因公开附件仅 APK 丢失可重建的输入。正式包与发布证据见 mobile/build/qa/release-validation.json。
 
 详细的验证范围和剩余门禁见 [移动端验证记录](../../mobile/VALIDATION.md)。
 
