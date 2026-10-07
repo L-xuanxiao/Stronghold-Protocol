@@ -1,6 +1,24 @@
 # Android 验证与发布记录
 
-当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.1.3-100007)为作者 v0.1.3 / `a0a5419eb875fb24de62e4dfb32b78cfcb3090be`，内部 versionCode=100007、安装界面 versionName=0.1.3；仅上传 `Stronghold-Protocol-0.1.3-arm64-v8a.apk`。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机已测试的本地首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；首轮 v0.1.3/code100006 仅为历史草稿。用户于 2026-10-04 终止剩余真机测试，2026-10-05 明确要求完成后正式发布；未继续操作或观察手机，新 v0.1.3 未安装到手机。
+当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.1.4-100009)为 v0.1.4，内部 versionCode=100009；v0.2.1 候选已完成构建和签名，正式发布核验正在进行。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，之后的新包未安装到手机。
+
+## 2026-10-07：v0.2.1 构建与发布
+
+本轮锁定作者 `v0.2.1 / c2a2ef778cf728ff29b953b9842b2a39b1e9cbea`。[候选完整流水线](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/37636177991)已通过；用户要求不追加过多测试，并在当前检查通过后正式发布，仅公开 APK。未恢复真机操作。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 上游完整源码测试 | 共 5162 项，5145 通过、17 跳过、0 失败；保持上游断言，文件串行执行 |
+| 移动工具回归 | 共 21 项，20 通过、1 个无缓存 wrapper 探针跳过、0 失败；后续实际 Gradle 构建成功 |
+| 原有四组 CI | [Windows/Linux × Node22/24](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/37636177943)全部通过 |
+| Android 构建、单元与 lint | ARM64 Release、x86_64 Debug 构建通过；单元 15 通过、0 失败/跳过；lint 0 errors / 5 warnings |
+| 完整资源 | 10204 文件 / 617434122 bytes，10246 项素材引用无缺失；ZIP SHA256=`2de40063d20a0c597910e9d0da26cc9b6d0eea456ca345a324b2412310def22c` |
+| API36 / 16 KB 离线模拟器 | 清数据断网首次解压、实际昵称进入大厅、WebSocket 与 Activity 销毁/重建通过；app3556 / Node4719 不变，uptime7→13；未验证该版本完整对局 |
+| APK 签名及对齐 | ARM64 APK 653555382 bytes，内部 code100011；长期签名证书一致，签名作业实际验证签名和 ZIP 16 KB 对齐；SHA256=`0d331afc0696c807c5227e7049a487f19692d1b47785ecfcf799e73e7d1efa46`，与 GitHub 候选附件摘要相同 |
+| 候选构建输入 | 12 个附件完整，含源码、锁文件、运行时输入和签名/摘要记录；正式发布时保留为 `inputs-android-v0.2.1-100011` 草稿 |
+| 正式发布 | 待发布工作流再次核对同一 APK 的实际签名、包名、版本、校验值及公开唯一附件；不重新构建 APK |
+
+本轮报告保存在忽略目录 `mobile/build/qa/update-20261007-cloud/`，构建日志为 `mobile/build/qa/update-20261007-build.log`，签名与资源元数据为 `mobile/build/qa/update-20261007-candidate/`。采用已有云端发布核验，不重复本地完整测试或新增设备测试。剩余真机对局、覆盖升级、双设备、Doze、网络切换和 API24 兼容性仍待验证。
 
 ## 已执行
 
