@@ -1,6 +1,6 @@
 # Android 验证与发布记录
 
-当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.1.4-100009)为 v0.1.4，内部 versionCode=100009；v0.2.1 候选已完成构建和签名，正式发布核验正在进行。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，之后的新包未安装到手机。
+当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.2.1-100011)为 v0.2.1，内部 versionCode=100011、安装界面 versionName=0.2.1；仅上传 `Stronghold-Protocol-0.2.1-arm64-v8a.apk`，前一稳定 v0.1.4 继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
 
 ## 2026-10-07：v0.2.1 构建与发布
 
@@ -16,9 +16,9 @@
 | API36 / 16 KB 离线模拟器 | 清数据断网首次解压、实际昵称进入大厅、WebSocket 与 Activity 销毁/重建通过；app3556 / Node4719 不变，uptime7→13；未验证该版本完整对局 |
 | APK 签名及对齐 | ARM64 APK 653555382 bytes，内部 code100011；长期签名证书一致，签名作业实际验证签名和 ZIP 16 KB 对齐；SHA256=`0d331afc0696c807c5227e7049a487f19692d1b47785ecfcf799e73e7d1efa46`，与 GitHub 候选附件摘要相同 |
 | 候选构建输入 | 12 个附件完整，含源码、锁文件、运行时输入和签名/摘要记录；正式发布时保留为 `inputs-android-v0.2.1-100011` 草稿 |
-| 正式发布 | 待发布工作流再次核对同一 APK 的实际签名、包名、版本、校验值及公开唯一附件；不重新构建 APK |
+| 正式发布 | [发布工作流](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/37640478089)通过：重新核对候选实际签名、包名、版本和校验值；公开后唯一 APK 附件摘要一致。北京时间 2026-10-07 22:54 发布，`latest` 指向本版；公开源码标签含实际使用的 v0.2.1 锁文件，不重新构建 APK |
 
-本轮报告保存在忽略目录 `mobile/build/qa/update-20261007-cloud/`，构建日志为 `mobile/build/qa/update-20261007-build.log`，签名与资源元数据为 `mobile/build/qa/update-20261007-candidate/`。采用已有云端发布核验，不重复本地完整测试或新增设备测试。剩余真机对局、覆盖升级、双设备、Doze、网络切换和 API24 兼容性仍待验证。
+本轮报告保存在忽略目录 `mobile/build/qa/update-20261007-cloud/`，构建日志为 `mobile/build/qa/update-20261007-build.log`，签名与资源元数据为 `mobile/build/qa/update-20261007-candidate/`；公开元数据和发布核验日志分别为 `mobile/build/qa/update-20261007-published.json`、`mobile/build/qa/update-20261007-publish.log`。正式 Release 的正文与已整理说明一致，12 个构建输入完整保留在备份草稿。采用已有云端发布核验，不重复本地完整测试或新增设备测试。剩余真机对局、覆盖升级、双设备、Doze、网络切换和 API24 兼容性仍待验证。
 
 ## 已执行
 
