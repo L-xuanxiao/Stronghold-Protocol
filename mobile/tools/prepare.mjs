@@ -35,11 +35,22 @@ async function writeEntries(entries, dest) {
 }
 export async function stageLockedSource(root, lock, source) {
   if (!/^[0-9a-f]{40}$/.test(lock.commit) || lock.schema !== 1 || !lock.version || !/^v?[0-9]/.test(lock.tag)) throw new Error('游戏锁文件格式无效');
+  const relative = path.relative(path.join(path.resolve(root), '.cache'), path.resolve(source));
+  if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) throw new Error('隔离源码只能写入本仓库的缓存子目录');
   const archive = spawnSync('git', ['archive', '--format=tar', lock.commit], { cwd: root, windowsHide: true, maxBuffer: 128 * 1024 * 1024 });
   if (archive.error || archive.status !== 0) throw new Error(`本地缺少锁定提交 ${lock.commit}；先 git fetch upstream ${lock.tag}（CI 须 fetch-depth: 0）`);
-  await fsp.mkdir(source, { recursive: true });
-  const entries = tarEntries(archive.stdout);
-  await writeEntries(entries, source);
+  // Git 签出前仍检查归档路径和链接；上游测试必须读到锁定提交自己的 Git 索引。
+  tarEntries(archive.stdout);
+  if (exists(path.join(source, '.git'))) {
+    const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: source, encoding: 'utf8', windowsHide: true });
+    if (top.error || top.status !== 0 || path.resolve(top.stdout.trim()) !== path.resolve(source)) throw new Error('隔离源码的 Git 工作区不匹配');
+    run('git', ['-c', 'core.autocrlf=false', 'checkout', '--detach', '--force', lock.commit], { cwd: source });
+  } else {
+    // 迁移旧版无 Git 索引的归档缓存；上方已确认目标位于生成缓存内。
+    await fsp.rm(source, { recursive: true, force: true });
+    await fsp.mkdir(path.dirname(source), { recursive: true });
+    run('git', ['-c', 'core.autocrlf=false', 'worktree', 'add', '--detach', '--force', source, lock.commit], { cwd: root });
+  }
   const pkg = await json(path.join(source, 'package.json'));
   if (pkg.version !== lock.version) throw new Error(`锁文件版本 ${lock.version} 与源码 ${pkg.version} 不一致`);
   return source;

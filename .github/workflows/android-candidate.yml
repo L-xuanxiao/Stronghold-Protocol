@@ -30,8 +30,17 @@ jobs:
     steps:
       - name: Keep original branch in sync without forcing divergent history
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh repo sync "$GITHUB_REPOSITORY" --source sganggs/Stronghold-Protocol --branch master
+          GH_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN || github.token }}
+        run: |
+          if output=$(gh repo sync "$GITHUB_REPOSITORY" --source sganggs/Stronghold-Protocol --branch master 2>&1); then
+            printf '%s\n' "$output"
+          elif [[ "$output" == *"Upstream commits contain workflow changes"* ]]; then
+            printf '%s\n' "$output"
+            echo '::warning title=master 同步需要额外权限::上游修改了工作流。请手动同步 master，或配置仅限本 fork、Contents/Workflows 可写的 UPSTREAM_SYNC_TOKEN；APK 仍从锁定正式 Release 构建。'
+          else
+            printf '%s\n' "$output"
+            exit 1
+          fi
 
   check:
     runs-on: ubuntu-24.04

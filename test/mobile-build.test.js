@@ -87,15 +87,25 @@ test('运行时必须真的满足 16 KB 对齐和完整动态依赖', async (t) 
   await fsp.writeFile(path.join(dir, 'libssl.so'), elf()); assert.equal((await validateRuntime(dir, 'arm64-v8a')).length, 2);
   await assert.rejects(validateRuntime(dir, 'x86_64'), /架构/);
 });
-test('源码来自锁定提交，当前工作树改动完全不进入隔离构建', async (t) => {
+test('锁定源码有独立 Git 索引，迁移旧缓存与重复准备不影响当前工作树', async (t) => {
   const root = await temporary(t), stage = path.join(root, '.cache/source');
   const git = (args) => { const r = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true }); assert.equal(r.status, 0, r.stderr); return r.stdout.trim(); };
   git(['init', '-q']); git(['config', 'user.email', 'test@example.invalid']); git(['config', 'user.name', 'Test']);
   await fsp.writeFile(path.join(root, 'package.json'), '{"version":"0.1.2"}'); await fsp.mkdir(path.join(root, 'data')); await fsp.writeFile(path.join(root, 'data/assets.json'), '{"baseline":true}');
   git(['add', '.']); git(['commit', '-qm', 'baseline']); const commit = git(['rev-parse', 'HEAD']);
   await fsp.writeFile(path.join(root, 'data/assets.json'), '{"userLocalChange":true}'); const before = git(['diff']);
-  await stageLockedSource(root, { schema: 1, commit, tag: 'v0.1.2', version: '0.1.2' }, stage);
+  const lock = { schema: 1, commit, tag: 'v0.1.2', version: '0.1.2' };
+  await fsp.mkdir(stage, { recursive: true }); await fsp.writeFile(path.join(stage, 'obsolete.js'), 'old archive cache');
+  await stageLockedSource(root, lock, stage);
   assert.equal(await fsp.readFile(path.join(stage, 'data/assets.json'), 'utf8'), '{"baseline":true}'); assert.equal(git(['diff']), before);
+  assert.equal(git(['-C', stage, 'rev-parse', 'HEAD']), commit);
+  assert.deepEqual(git(['-C', stage, 'ls-files']).split('\n'), ['data/assets.json', 'package.json']);
+  await assert.rejects(fsp.access(path.join(stage, 'obsolete.js')));
+  await fsp.writeFile(path.join(stage, 'data/assets.json'), '{"staleGeneratedChange":true}');
+  await stageLockedSource(root, lock, stage);
+  assert.equal(await fsp.readFile(path.join(stage, 'data/assets.json'), 'utf8'), '{"baseline":true}');
+  await assert.rejects(stageLockedSource(root, lock, path.join(root, 'data')), /缓存子目录/);
+  assert.equal(git(['diff']), before);
 });
 test('资源清单中的音效缺失会阻止离线包发布', async (t) => {
   const root = await temporary(t); await fsp.mkdir(path.join(root, 'data')); await fsp.writeFile(path.join(root, 'data/assets.json'), '{"audio":{"attack":"/assets/sfx/attack.wav"}}');
