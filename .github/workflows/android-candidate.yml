@@ -8,7 +8,7 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: '17 4 * * *'
+    - cron: '0 10,22 * * *'
   push:
     branches: [codex/android]
     paths:
@@ -259,7 +259,7 @@ jobs:
           CODE: ${{ needs.check.outputs.code }}
         run: |
           tag="android-v$VERSION-$CODE"
-          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Android $VERSION 候选" --notes-file mobile/RELEASE-NOTES.md
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Android $VERSION 候选" --notes "基于作者 v$VERSION 的完整离线 ARM64 Android 候选，尚未正式发布。构建与验证记录：https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID 。完整源码、锁文件、签名摘要和运行时输入见附件；版本与验证范围以本轮构建记录为准。"
           gh release upload "$tag" --repo "$GITHUB_REPOSITORY" mobile/build/release/* mobile/build/candidate/game.lock.json mobile/build/candidate/version.json mobile/build/candidate/runtime.lock.json mobile/build/candidate/fonts.lock.json mobile/build/candidate/build.json mobile/build/candidate/upstream-source.tar.gz mobile/build/candidate/mobile-source.zip mobile/build/candidate/runtime-inputs.zip
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'

@@ -5,7 +5,7 @@
 ## 使用
 
 - 从 [最新正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/latest) 下载 APK；公开上传的附件仅为安装包，具体版本及验收范围见 [验证记录](VALIDATION.md)。
-- 安装 ARM64 APK 后，首次启动会解压并校验内置游戏；此过程不需要网络。完整 APK 约 410 MiB，首次准备需额外约 800 MB 可用空间。
+- 安装 ARM64 APK 后，首次启动会解压并校验内置游戏；此过程不需要网络。APK 和内置资源体积随版本变化，以 Release 附件为准；首次准备和升级需要额外的解压空间。
 - 默认离线单机。点容器菜单开启局域网开服，将手机 IP 地址分享给同一 Wi-Fi 下的朋友，朋友在浏览器加入。
 - 局域网开服时可切后台和锁屏，通知提供停止入口。长时间锁屏可能受系统省电限制影响，可从菜单进入系统电池设置。系统强停会结束正在进行的对局。
 - 菜单提供设置/昵称/干员调配导出和导入。覆盖安装保留设置；卸载应用会删除应用数据，建议先导出。
@@ -39,7 +39,7 @@ node mobile/ci/sign.mjs mobile/android/app/build/outputs/apk/release/app-release
 
 ## 自动更新
 
-`Android candidate` 工作流计划每天北京时间 12:17 同步作者原版 `master` 并检查正式 Release，也可手动运行。`master` 发生独立修改、无法正常同步时会报错，不强制覆盖历史。构建锁文件记录标签、完整提交和官方完整素材包 SHA256；无校验值、不完整素材或不兼容接口均使候选构建失败，不替换已发布的稳定 APK。
+`Android candidate` 工作流每 12 小时检查一次，计划在北京时间每天 06:00、18:00 同步作者原版 `master` 并检查正式 Release，也可手动运行。没有新正式版本时只检查，不构建 APK。`master` 发生独立修改、无法正常同步时会报错，不强制覆盖历史。构建锁文件记录标签、完整提交和官方完整素材包 SHA256；无校验值、不完整素材或不兼容接口均使候选构建失败，不替换已发布的稳定 APK。
 
 GitHub 的计划任务可能延后，以 Actions 中的实际运行时间为准。上游更新工作流文件时，默认 `GITHUB_TOKEN` 不能同步这些提交；任务会明确警告，APK 仍按锁定的正式 Release 独立构建。可在网页上手动同步 `master`，或配置可选 Secret `UPSTREAM_SYNC_TOKEN`：使用仅选中本 fork 的细粒度令牌，授予 Contents 和 Workflows 的读写权限。其他同步错误仍使任务失败，不丢弃分支历史。
 

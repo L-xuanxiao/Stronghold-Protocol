@@ -2,6 +2,24 @@
 
 当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.2.1-100011)为 v0.2.1，内部 versionCode=100011、安装界面 versionName=0.2.1；仅上传 `Stronghold-Protocol-0.2.1-arm64-v8a.apk`，前一稳定 v0.1.4 继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
 
+## 2026-10-09：v0.2.2 构建与发布
+
+本轮锁定作者 `v0.2.2 / 62eb113419123d9a3a63606107bbf85230c5dd2f`。排查期间原有定时任务自动启动，[候选完整流水线](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/37922822606)全部通过，未重复触发构建。用户随后明确授权正式发布，只公开同一份 APK；未恢复真机操作。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 上游完整源码测试 | 共 5706 项，5684 通过、22 跳过、0 失败；保持上游断言 |
+| 移动工具回归 | 共 21 项，20 通过、1 个无缓存 wrapper 探针跳过、0 失败；后续实际 Gradle 构建成功 |
+| Android 构建、单元与 lint | ARM64 Release、x86_64 Debug 构建通过；单元 15 通过、0 失败/跳过；lint 0 errors / 5 warnings |
+| 完整资源 | 12897 文件 / 708709108 bytes，12920 项素材引用无缺失；资源 ZIP SHA256=`b091d95d862506a038e958b67ef727db81375c1e35ff23360103bb2e05f7a4fe` |
+| API36 / 16 KB 离线模拟器 | 清数据断网首次解压、实际昵称进入大厅、WebSocket 与 Activity 销毁/重建通过；app3590 / Node4395 不变，uptime11→16、sockets=1；未验证新版完整对局及新增语音听感 |
+| APK 签名及对齐 | ARM64 APK 745465526 bytes，内部 code100013；长期签名证书一致，签名作业实际验证签名和 ZIP 16 KB 对齐；SHA256=`f67345d11c97c059dce953a11b8dd8cee2dc3e5791975c377ed6f5f969038d13`，与 GitHub 候选附件摘要相同 |
+| 候选构建输入 | 12 个附件完整，含源码、锁文件、运行时输入和签名/摘要记录；正式发布时保留为 `inputs-android-v0.2.2-100013` 草稿 |
+| 自动更新配置 | 改为 cron `0 10,22 * * *`，对应北京时间 06:00、18:00；更新选择与同步回归 4/4 通过，真实上游数据确认当前锁定 v0.2.2 时跳过重复构建；新时间点实际调度待观察，GitHub 不保证准点 |
+| 正式发布 | 待发布工作流核验同一 APK 的真实签名、版本、摘要及公开唯一附件；保留上一稳定 v0.2.1 |
+
+本轮报告保存在忽略目录 `mobile/build/qa/update-20261009-cloud/`，构建日志为 `mobile/build/qa/update-20261009-build.log`，签名与资源元数据为 `mobile/build/qa/update-20261009-candidate/`。仅复用已完成的云端构建及已有发布门禁，不追加真机测试或重复完整测试。剩余完整对局、新语音听感、正式签名覆盖升级、双设备、Doze、网络切换和 API24 设备兼容性仍待验证。
+
 ## 2026-10-07：v0.2.1 构建与发布
 
 本轮锁定作者 `v0.2.1 / c2a2ef778cf728ff29b953b9842b2a39b1e9cbea`。[候选完整流水线](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/37636177991)已通过；用户要求不追加过多测试，并在当前检查通过后正式发布，仅公开 APK。未恢复真机操作。
