@@ -87,10 +87,39 @@ jobs:
             mobile/game.lock.json
             mobile/version.json
 
-  build:
+  restore-runtime:
     needs: check
     if: needs.check.outputs.build == 'true'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      # 草稿备份需要写权限；此作业只运行 fork 工具，不执行上游游戏代码。
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - name: Restore archived runtime inputs
+        run: node mobile/ci/restore-runtime.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Verify and package locked runtime inputs
+        run: node mobile/tools/runtime-inputs.mjs export --file=mobile/build/runtime-inputs.zip
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: runtime-inputs
+          path: mobile/build/runtime-inputs.zip
+          if-no-files-found: error
+          retention-days: 1
+
+  build:
+    needs: [check, restore-runtime]
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 70
     env:
       GRADLE_USER_HOME: ${{ github.workspace }}/.cache/gradle
@@ -132,10 +161,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Restore archived runtime inputs
-        run: node mobile/ci/restore-runtime.mjs
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: runtime-inputs
+          path: mobile/build
+      - name: Verify restored runtime inputs
+        run: node mobile/tools/runtime-inputs.mjs import --file=mobile/build/runtime-inputs.zip
       - name: Prepare ARM64 game and runtime
         run: |
           node mobile/tools/prepare.mjs --abi=arm64-v8a

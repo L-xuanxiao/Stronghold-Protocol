@@ -92,3 +92,14 @@ v0.2.1 独立源码工作区有 1195 个跟踪文件；新增文档、打包两�
 
 - https://github.com/sganggs/Stronghold-Protocol/pull/7 （未合并）
 - https://github.com/Fuhua-code/Stronghold-Protocol/releases/tag/0.1.1-connect
+
+## 2026-10-11 运行时草稿备份恢复修复
+
+- [x] 独立作业以 Contents 写权限恢复、校验并传递运行时输入；构建保持只读。
+- [x] 增加权限隔离和 artifact 传递回归检查，验证旧工作流不能通过。
+- [x] 在空目录导入真实运行时备份，验证锁文件摘要及离线 ARM64/x86_64 输入。
+- [ ] 运行移动端测试并检查工作流；记录云端构建验证结果或阻碍。
+
+### 结果审查
+
+本地移动端测试 21 通过、1 跳过（Bash 不可用）；YAML 解析及依赖关系检查通过。旧工作流负向对照按预期失败。真实备份空目录恢复 21 项，missing/skipped 为空，两种 ABI 均离线校验通过。云端 APK 构建待验证。

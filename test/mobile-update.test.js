@@ -37,6 +37,25 @@ test('updater resolves lightweight and annotated tags, rejecting non-commit targ
   await assert.rejects(resolveCommit(async () => ({ object: { type: 'blob', sha } }), 'x/y', 'v1.0.0'));
 });
 
+test('运行时草稿在独立写权限作业恢复，通过校验归档传给只读构建', () => {
+  const yaml = readFileSync(new URL('../.github/workflows/android-candidate.yml', import.meta.url), 'utf8');
+  const job = (name) => yaml.match(new RegExp(`^  ${name}:\\r?\\n([\\s\\S]*?)(?=^  [\\w-]+:|$(?![\\s\\S]))`, 'm'))?.[1];
+  const restore = job('restore-runtime'), build = job('build');
+  assert.ok(restore, '必须有独立恢复作业，旧只读构建无法读取草稿');
+  assert.match(restore, /permissions:\s+contents: write/);
+  assert.match(restore, /persist-credentials: false/);
+  assert.match(restore, /node mobile\/ci\/restore-runtime\.mjs/);
+  assert.match(restore, /runtime-inputs\.mjs export --file=mobile\/build\/runtime-inputs\.zip/);
+  assert.match(restore, /actions\/upload-artifact@[\s\S]*name: runtime-inputs/);
+  assert.doesNotMatch(restore, /npm ci|prepare\.mjs|gradlew|upstream/);
+  assert.match(build, /needs: \[check, restore-runtime\]/);
+  assert.match(build, /permissions:\s+contents: read/);
+  assert.doesNotMatch(build, /GH_TOKEN|contents: write|restore-runtime\.mjs/);
+  assert.match(build, /actions\/download-artifact@[\s\S]*name: runtime-inputs\s+path: mobile\/build/);
+  assert.match(build, /runtime-inputs\.mjs import --file=mobile\/build\/runtime-inputs\.zip\r?\n/);
+  assert.ok(build.indexOf('runtime-inputs.mjs import') < build.indexOf('prepare.mjs --abi=arm64-v8a'));
+});
+
 test('master 同步仅将已知工作流权限限制降为警告，其他失败仍返回错误', (t) => {
   const gitPath = spawnSync('git', ['--exec-path'], { encoding: 'utf8', windowsHide: true }).stdout.trim();
   const bash = process.platform === 'win32' ? path.resolve(gitPath, '../../../bin/bash.exe') : 'bash';
