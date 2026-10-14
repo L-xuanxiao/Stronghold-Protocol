@@ -2,6 +2,29 @@
 
 当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.2.2-100013)为 v0.2.2，内部 versionCode=100013、安装界面 versionName=0.2.2；仅上传 `Stronghold-Protocol-0.2.2-arm64-v8a.apk`，前一稳定 v0.2.1 继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
 
+## 2026-10-14：v0.2.6 构建修复与发布
+
+本轮开始时远端最新正式版为 v0.2.4 / `android-v0.2.4-100018`，v0.2.5 仅有候选草稿。本轮锁定作者 `v0.2.6 / 488db49f11daf862b67ce26fa4cf89aa6cba2466`，使用完整官方归档 583440026 bytes、SHA256=`8ad71ab1111438c483daddf3cba116d20058a5bb813d9a16eccef087a28e2866`。
+
+失败基线：[10 月 13 日运行](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/38437528900)及[10 月 14 日运行](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/38492263596)均在 4 GiB / API36 / 16 KB 模拟器首次启动时，被 Android lowmemorykiller 杀掉前台应用（RSS 分别 315272/287968 KiB），随后等待服务器超时；后一轮上游 6335 通过、27 跳过、0 失败，工具 21 通过/1 跳过、Android 单元 15 通过、两种 ABI 的 APK 编译成功。宿主约 14.9 GiB 可用内存，未发生宿主 OOM；失败点属于模拟器内存压力，不是 APK 编译失败。
+
+修复仅把 CI 模拟器 RAM 从 4 GiB 调为 8 GiB（16 GiB 宿主），保留 API36 / 16 KB 镜像、无外网清数据首次启动、完整资源校验、实际可见界面、WebSocket、Activity 真正销毁/重建及签名门禁。未更改游戏规则、运行时、签名或放宽超时；不将此修复作为低内存手机已验收的证据。配置检查和现有更新/权限/同步回归 5/5 通过。
+
+[修复后的完整流水线](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/38562008092)已全部成功，内部 code100025；失败的启动门禁已在相同 API36 / 16 KB 镜像、相同游戏提交上通过。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 上游源码测试 | 共 6362 项，6335 通过、27 跳过、0 失败；保持原有断言和串行执行 |
+| 移动工具回归 | 共 22 项，21 通过、1 个无缓存 wrapper 探针跳过、0 失败；后续实际 Gradle 构建成功 |
+| Android 构建、单元与 lint | ARM64 Release、x86_64 Debug 构建通过；单元 15 通过、0 失败/跳过；lint 0 errors / 5 warnings |
+| 完整资源 | 13355 文件 / 784391863 bytes，13295 项素材引用无缺失；资源 ZIP SHA256=`4bb74a50990550606b687e03242614834431165e3425cae8e6a1350915ee9194` |
+| API36 / 16 KB / 8 GiB 离线模拟器 | 清数据断网首次解压、昵称进入大厅、WebSocket 和 Activity 真正销毁/重建通过；app3574 / Node3810 不变，uptime8→12、sockets=1；未验证新版完整对局及官方场景的真机表现 |
+| APK 签名及对齐 | ARM64 APK 821253814 bytes，内部 code100025；长期证书一致，签名作业通过；SHA256=`c420c8e5ea56add99ef50655a303c5dfc2513209bd357ec8fcd9ea20f394138b`，与候选附件摘要相同 |
+| 候选构建输入 | 实际 12 个附件完整，含源码、锁文件、运行时输入和签名/摘要记录；正式发布时保留为 `inputs-android-v0.2.6-100025` 草稿 |
+| 正式发布 | 待现有发布工作流再次核对实际 APK 的签名、包名、版本及公开唯一附件；上一稳定 v0.2.4 保留 |
+
+诊断报告保存在忽略目录 `mobile/build/qa/update-20261014-failed-cloud/`、`mobile/build/qa/update-20261014-previous-failed-cloud/`，失败日志为 `mobile/build/qa/update-20261014-failed.log`；本轮成功报告为 `mobile/build/qa/update-20261014-cloud/`，构建日志 `mobile/build/qa/update-20261014-build.log`，候选元数据 `mobile/build/qa/update-20261014-candidate/`。不追加已被用户终止的真机测试；完整新版对局、官方场景及音频真机表现、正式签名覆盖升级、双设备、Doze、网络切换、API24 / 低内存设备兼容性仍待验证。
+
 ## 2026-10-09：v0.2.2 构建与发布
 
 本轮锁定作者 `v0.2.2 / 62eb113419123d9a3a63606107bbf85230c5dd2f`。排查期间原有定时任务自动启动，[候选完整流水线](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/37922822606)全部通过，未重复触发构建。用户随后明确授权正式发布，只公开同一份 APK；未恢复真机操作。
