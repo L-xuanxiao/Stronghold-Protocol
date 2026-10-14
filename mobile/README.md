@@ -43,9 +43,9 @@ node mobile/ci/sign.mjs mobile/android/app/build/outputs/apk/release/app-release
 
 GitHub 的计划任务可能延后，以 Actions 中的实际运行时间为准。上游更新工作流文件时，默认 `GITHUB_TOKEN` 不能同步这些提交；任务会明确警告，APK 仍按锁定的正式 Release 独立构建。可在网页上手动同步 `master`，或配置可选 Secret `UPSTREAM_SYNC_TOKEN`：使用仅选中本 fork 的细粒度令牌，授予 Contents 和 Workflows 的读写权限。其他同步错误仍使任务失败，不丢弃分支历史。
 
-源码缓存使用锁定提交的独立 Git 工作区，保留路径及链接安全校验；重复准备会恢复该提交的源码。本机未提交改动不会进入构建，也不会因上游测试读取 Git 文件列表而误用外层 Android 仓库。
+源码缓存使用锁定提交的独立 Git 工作区，保留路径及链接安全校验；重复准备会恢复该提交的源码。本机未提交改动不会进入构建。
 
-流程：检测正式版本 → 隔离源码与资源 → 上游测试 → ARM64 构建与 Android 单元测试/lint → Android16/16KB模拟器启动检查 → 独立作业签名 → 草稿 Release。构建作业不接触签名密钥；签名作业不执行游戏和 npm 安装脚本。
+流程：检测正式版本 → 隔离源码与资源 → ARM64 构建与 Android 单元测试/lint → Android16/16KB模拟器启动检查 → 独立作业签名 → 草稿 Release。按维护者要求不再运行上游全量游戏测试；候选检查覆盖打包和 Android 运行，不代表已验证上游全部游戏规则。构建作业不接触签名密钥；签名作业不执行游戏和 npm 安装脚本。
 
 Android 工作流固定使用已通过全链路检查的 Ubuntu24.04，SDK/Gradle/运行时版本由锁文件及构建配置管理；升级构建环境时显式修改并重新验证。
 
