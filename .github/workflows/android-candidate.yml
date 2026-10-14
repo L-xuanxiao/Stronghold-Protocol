@@ -210,8 +210,8 @@ jobs:
           api-level: 36
           arch: x86_64
           target: google_apis_ps16k
-          # 16 KB 系统首启的 Google 服务会与资源校验、WebView 争用内存。
-          ram-size: 4096M
+          # 两轮 4 GiB 首启被 lowmemorykiller 杀掉前台应用；16 GiB 宿主为系统和完整资源校验预留 8 GiB。
+          ram-size: 8192M
           disk-size: 8192M
           # WebView 使用 GLES；关闭无头宿主的 Vulkan 路径，保留硬件加速和 16 KB 镜像。
           emulator-options: -no-window -gpu swangle -no-snapshot -noaudio -no-boot-anim -feature -Vulkan
