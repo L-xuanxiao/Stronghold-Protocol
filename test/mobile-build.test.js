@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { sha256, hashFile, safePath, tarEntries, writeZip, zipEntries } from '../mobile/tools/archive.mjs';
 import { verifiedDownload } from '../mobile/tools/download.mjs';
 import { patchElf, inspectElf, validate16k, validateRuntime } from '../mobile/tools/elf.mjs';
-import { stageLockedSource, validateAssetReferences } from '../mobile/tools/prepare.mjs';
+import { stageLockedSource, stageGameSource, validateAssetReferences } from '../mobile/tools/prepare.mjs';
 import { importRuntimeInputs } from '../mobile/tools/runtime-inputs.mjs';
 import { runGradle, ensureDebugKeystore } from '../mobile/tools/build.mjs';
 import { localFontHtml } from '../mobile/tools/fonts.mjs';
@@ -34,6 +34,27 @@ function elf({ alignment = 16384, needed = [], machine = 183 } = {}) {
   const records = [[5, 66048], [10, strSize], ...offsets.map((offset) => [1, offset]), [0, 0]];
   records.forEach(([tag, value], i) => { b.writeBigInt64LE(BigInt(tag), 192 + i * 16); b.writeBigUInt64LE(BigInt(value), 200 + i * 16); }); return b;
 }
+
+test('打包后的服务器保留 v0.3.0 静态导入的素材解析器', async (t) => {
+  const dir = await temporary(t), source = path.join(dir, 'source'), staged = path.join(dir, 'staged');
+  const files = {
+    'package.json': '{"type":"module"}',
+    'server/index.js': "import '../tools/assets/skel.mjs'; import '../tools/assets/anim-roles.mjs'; import '../tools/assets/atlas.mjs';",
+    'shared/index.js': '', 'data/index.json': '{}', 'public/index.html': '',
+    'LICENSE': 'license', 'NOTICE.md': 'notice', 'THIRD-PARTY-NOTICES.md': 'third party',
+    'docs/research/table.md': 'table', 'node_modules/ws/package.json': '{"type":"commonjs"}',
+    'tools/assets/skel.mjs': 'export const parseSkel = () => {};',
+    'tools/assets/anim-roles.mjs': 'export const resolveRoles = () => {};',
+    'tools/assets/atlas.mjs': 'export const atlasInfo = () => {};',
+  };
+  for (const [rel, bytes] of Object.entries(files)) {
+    const file = path.join(source, rel); await fsp.mkdir(path.dirname(file), { recursive: true }); await fsp.writeFile(file, bytes);
+  }
+  await stageGameSource(source, staged);
+  await fsp.rm(source, { recursive: true, force: true });
+  const child = spawnSync(process.execPath, [path.join(staged, 'server/index.js')], { encoding: 'utf8', windowsHide: true });
+  assert.equal(child.status, 0, child.stderr);
+});
 test('下载先核验 SHA256；坏缓存和坏下载都不能继续解压', async (t) => {
   const dir = await temporary(t), file = path.join(dir, 'runtime.deb'); const valid = Buffer.from('expected');
   const spec = { url: 'https://example.invalid/node.deb', sha256: sha256(valid) }; let requests = 0;

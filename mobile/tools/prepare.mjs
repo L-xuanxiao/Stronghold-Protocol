@@ -151,6 +151,15 @@ export async function validateAssetReferences(game) {
   return { references: count, missing: [] };
 }
 async function copyTree(source, destination) { await fsp.cp(source, destination, { recursive: true, dereference: false, filter: (file) => !fs.lstatSync(file).isSymbolicLink() }); }
+export async function stageGameSource(source, destination) {
+  for (const rel of ['server', 'shared', 'data', 'public', 'package.json', 'LICENSE', 'NOTICE.md', 'THIRD-PARTY-NOTICES.md']) await copyTree(path.join(source, rel), path.join(destination, rel));
+  if (exists(path.join(source, 'NOTICE'))) await copyTree(path.join(source, 'NOTICE'), path.join(destination, 'NOTICE'));
+  await copyTree(path.join(source, 'docs/research'), path.join(destination, 'docs/research'));
+  // v0.3.0 的服务器直接导入这些解析器，不能再将整个 tools 目录视为仅构建时使用。
+  for (const name of ['skel.mjs', 'anim-roles.mjs', 'atlas.mjs']) await copyTree(path.join(source, 'tools/assets', name), path.join(destination, 'tools/assets', name));
+  await copyTree(path.join(source, 'node_modules/ws'), path.join(destination, 'node_modules/ws'));
+  await fsp.writeFile(path.join(destination, 'node_modules/package.json'), '{"type":"commonjs"}\n');
+}
 async function prepareGame(gameLock, runtimeLock, { offline = false } = {}) {
   const source = path.join(CACHE, 'source', gameLock.commit);
   await stageLockedSource(ROOT, gameLock, source);
@@ -187,11 +196,7 @@ async function prepareGame(gameLock, runtimeLock, { offline = false } = {}) {
   await writeEntries(assetEntries, source);
   const destination = path.join(BUILD, 'game');
   await removeGenerated(destination); await fsp.mkdir(destination, { recursive: true });
-  for (const rel of ['server', 'shared', 'data', 'public', 'package.json', 'LICENSE', 'NOTICE.md', 'THIRD-PARTY-NOTICES.md']) await copyTree(path.join(source, rel), path.join(destination, rel));
-  if (exists(path.join(source, 'NOTICE'))) await copyTree(path.join(source, 'NOTICE'), path.join(destination, 'NOTICE'));
-  await copyTree(path.join(source, 'docs/research'), path.join(destination, 'docs/research'));
-  await copyTree(path.join(source, 'node_modules/ws'), path.join(destination, 'node_modules/ws'));
-  await fsp.writeFile(path.join(destination, 'node_modules/package.json'), '{"type":"commonjs"}\n');
+  await stageGameSource(source, destination);
   await fsp.copyFile(path.join(ROOT, 'mobile/node/main.mjs'), path.join(destination, 'mobile-main.mjs'));
   await prepareLicenses(runtimeLock, destination, offline);
   const fonts = await prepareFonts(destination, ROOT, await json(path.join(ROOT, 'mobile/fonts.lock.json')), { offline });
