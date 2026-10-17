@@ -1,6 +1,6 @@
 # Android 验证与发布记录
 
-当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.2.6-100025)为 v0.2.6，内部 versionCode=100025、安装界面 versionName=0.2.6；仅上传 `Stronghold-Protocol-0.2.6-arm64-v8a.apk`，前一稳定 v0.2.4 及更早版本继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
+当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.3.0-100030)为 v0.3.0，内部 versionCode=100030、安装界面 versionName=0.3.0；仅上传 `Stronghold-Protocol-0.3.0-arm64-v8a.apk`，前一稳定 v0.2.6 及更早版本继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
 
 ## 2026-10-17：v0.3.0 补跑、资源容量兼容与发布
 
@@ -22,7 +22,9 @@
 | API36 / 16 KB / 8 GiB 离线模拟器 | 清数据断网首次解压、昵称进入大厅、WebSocket 和 Activity 真正销毁/重建通过；app3650 / Node3925 不变，uptime5→9、sockets=1 |
 | 云端候选 | [38995166945](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/38995166945)全部成功，内部 code100030；12 个完整候选附件，含源码、实际锁文件、签名/摘要及运行时输入；机器人已写回 v0.3.0 锁文件 |
 | APK 签名及对齐 | ARM64 APK 1214801590 bytes，长期证书一致，签名及 ZIP 16 KB 对齐通过；SHA256=`cffbce65c037db1581390329a27b7be692d61b52600df83cd22fad2832893bf4`，与候选附件摘要一致 |
-| 正式发布 | 用户已明确授权完成后正式发布，仅 APK；尚未发布，保留当前稳定 v0.2.6 |
+| 正式发布 | [发布门禁 38995873245](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/38995873245)成功，实际核对真实签名、包名、版本与摘要；北京时间 2026-10-17 10:42:06 发布并设为 latest，公开唯一 APK 与候选摘要相同，正文与本轮说明一致；源码标签 3727dc29 含实际 v0.3.0 锁文件，12 个完整输入保留在 `inputs-android-v0.3.0-100030` 草稿，上一稳定 v0.2.6 保留 |
+
+成功模拟器及 Android 报告位于忽略目录 `mobile/build/qa/update-20261017-cloud/`，完整构建日志 `update-20261017-build.log`，最终锁文件 `update-20261017-final-lock/`，候选签名/资源元数据 `update-20261017-candidate/`，正式 API 元数据和发布日志 `update-20261017-published.json`、`update-20261017-publish.log`。已核对公开附件字节摘要、规范化换行后的完整正文、远端源码标签及备份草稿；未重新构建正式包，未改动用户主工作区。定时配置仍为北京时间 06:00、18:00，本次手动发布不能证明 GitHub 定时调度已经恢复。
 
 失败报告在忽略目录 `mobile/build/qa/update-20261017-failed-cloud/`、`update-20261017-fixed-failed-cloud/`、`update-20261017-diagnostic-cloud/`，对应本轮保存的失败和构建日志；直接 JVM 安装器对照与通过记录在 `mobile/build/qa/installer-unit/`，源码裁剪对照与真实启动记录为 `update-20261017-source-before.log`、`update-20261017-source-after.log`、`update-20261017-staged-startup.log`。本轮不操作真机；完整对局、官方特效/语音真机表现、插件导入导出/沙箱/跨升级保留、正式签名覆盖升级、双设备、Doze、网络切换及 API24/低内存设备兼容性仍待验证。
 
