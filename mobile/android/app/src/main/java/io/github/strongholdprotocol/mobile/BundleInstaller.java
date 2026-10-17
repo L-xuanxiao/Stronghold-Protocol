@@ -13,7 +13,9 @@ import java.util.zip.ZipFile;
 /** 只把通过清单校验的完整资源目录交给 Node，失败时保留上次安装。 */
 final class BundleInstaller {
     interface Assets { InputStream open(String name) throws IOException; }
-    static final int MAX_MANIFEST_BYTES = 4 * 1024 * 1024;
+    // v0.3.0 完整素材已超过 3 万文件；清单与 ZIP 共用有界数量，仍不接受 ZIP64。
+    static final int MAX_BUNDLE_FILES = 60000;
+    static final int MAX_MANIFEST_BYTES = 16 * 1024 * 1024;
     private static final long MAX_BUNDLE_BYTES = 4L * 1024 * 1024 * 1024;
 
     static final class Item {
@@ -37,7 +39,7 @@ final class BundleInstaller {
             if (!version.matches("[A-Za-z0-9._+-]{1,64}")) throw new IOException("无效的游戏版本");
             if (!json.getString("upstreamCommit").matches("[a-fA-F0-9]{40}")) throw new IOException("无效的源码版本");
             JSONArray list = json.getJSONArray("files");
-            if (list.length() == 0 || list.length() > 30000) throw new IOException("资源文件数量异常");
+            if (list.length() == 0 || list.length() > MAX_BUNDLE_FILES) throw new IOException("资源文件数量异常");
             Map<String, Item> files = new LinkedHashMap<>();
             long total = 0;
             for (int i = 0; i < list.length(); i++) {
@@ -244,7 +246,7 @@ final class BundleInstaller {
             if (end < 0 || ushort(tail, end + 4) != 0 || ushort(tail, end + 6) != 0) throw new IOException("不支持的 ZIP 格式");
             int count = ushort(tail, end + 10);
             long size = uint(tail, end + 12), offset = uint(tail, end + 16);
-            if (count == 65535 || count > 30000 || count != ushort(tail, end + 8) || offset + size > length - tailLength + end) throw new IOException("ZIP 中央目录异常");
+            if (count == 65535 || count > MAX_BUNDLE_FILES || count != ushort(tail, end + 8) || offset + size > length - tailLength + end) throw new IOException("ZIP 中央目录异常");
             file.seek(offset);
             long directoryEnd = offset + size;
             Set<String> names = new HashSet<>();

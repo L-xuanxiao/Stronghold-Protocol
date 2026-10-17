@@ -144,6 +144,7 @@ export async function validateAssetReferences(game) {
   }
   walk(await json(path.join(game, 'data/assets.json')));
   if (exists(path.join(game, 'data/local-assets.json'))) walk(await json(path.join(game, 'data/local-assets.json')));
+  if (exists(path.join(game, 'data/local-fx.json'))) walk(await json(path.join(game, 'data/local-fx.json')));
   if (!count || missing.size) throw new Error(`离线资源不完整，缺少 ${missing.size} 项: ${[...missing].slice(0, 20).join(', ')}`);
   for (const rel of ['public/index.html', 'public/vendor/pixi.min.js', 'public/vendor/three.module.js', 'public/assets/local/map/autochess/TX_autochessi_D.png', 'public/assets/local/map/autochess/tiles.json']) if (!exists(path.join(game, rel))) throw new Error(`缺少 ${rel}`);
   if (!exists(path.join(game, 'data/local-assets.json')) || !exists(path.join(game, 'public/assets/local'))) throw new Error('官方整合包缺少本地 3D 素材/清单，不能当成完整离线版发布');
@@ -174,7 +175,7 @@ async function prepareGame(gameLock, runtimeLock, { offline = false } = {}) {
   const assetEntries = [], selectedPaths = new Set();
   for (const entry of entries) {
     if (entry.directory) continue;
-    const match = /(?:^|\/)(public\/(?:assets|fonts)\/.+|data\/local-assets\.json)$/.exec(entry.path);
+    const match = /(?:^|\/)(public\/(?:assets|fonts)\/.+|data\/local-(?:assets|fx)\.json)$/.exec(entry.path);
     if (match) {
       if (selectedPaths.has(match[1])) throw new Error(`整合包素材目录冲突: ${match[1]}`);
       selectedPaths.add(match[1]); assetEntries.push({ path: match[1], bytes: entry.bytes() });

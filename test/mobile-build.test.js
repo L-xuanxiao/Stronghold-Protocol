@@ -111,6 +111,13 @@ test('资源清单中的音效缺失会阻止离线包发布', async (t) => {
   const root = await temporary(t); await fsp.mkdir(path.join(root, 'data')); await fsp.writeFile(path.join(root, 'data/assets.json'), '{"audio":{"attack":"/assets/sfx/attack.wav"}}');
   await assert.rejects(validateAssetReferences(root), /缺少 1 项/);
 });
+
+test('官方特效清单中的素材缺失会阻止离线包发布', async (t) => {
+  const root = await temporary(t); await fsp.mkdir(path.join(root, 'data'));
+  await fsp.writeFile(path.join(root, 'data/assets.json'), '{}');
+  await fsp.writeFile(path.join(root, 'data/local-fx.json'), '{"hit":"/assets/local/fx/missing.png"}');
+  await assert.rejects(validateAssetReferences(root), /缺少 1 项:.*missing\.png/);
+});
 test('离线运行时备份必须匹配锁文件且全部校验后才写缓存', async (t) => {
   const root = await temporary(t), stage = path.join(root, 'input'), destination = path.join(root, 'restored');
   const bytes = Buffer.from('verified-deb'), pkg = { sha256: sha256(bytes), size: bytes.length }, lock = { abis: { arm64: { packages: [pkg] } }, licenses: [] };

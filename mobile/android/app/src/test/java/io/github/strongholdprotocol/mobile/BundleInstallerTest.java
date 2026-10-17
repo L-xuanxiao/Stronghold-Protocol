@@ -38,6 +38,35 @@ public final class BundleInstallerTest {
         return name -> new ByteArrayInputStream(name.equals("game-manifest.json") ? manifest : zip);
     }
 
+    private static Map<String, String> manyFiles(int count) {
+        Map<String, String> files = new LinkedHashMap<>();
+        for (int i = 0; i < count; i++) files.put("public/assets/local/fx/v030-large-bundle-regression/official-particle-data-file-" + i + ".json", "");
+        return files;
+    }
+
+    @Test public void acceptsV030ScaleManifestLargerThanFourMiB() throws Exception {
+        byte[] bytes = manifest("v030", manyFiles(31874));
+        assertTrue(bytes.length > 4 * 1024 * 1024);
+        byte[] bounded = BundleInstaller.readBounded(new ByteArrayInputStream(bytes), BundleInstaller.MAX_MANIFEST_BYTES);
+        assertEquals(31874, BundleInstaller.Manifest.parse(bounded).files.size());
+    }
+
+    @Test public void acceptsV030ScaleZipDirectory() throws Exception {
+        File archive = temp.newFile();
+        Files.write(archive.toPath(), zip(manyFiles(31874)));
+        BundleInstaller.validateCentralDirectory(archive);
+    }
+
+    @Test public void stillRejectsOversizedManifestAndExcessiveEntryCounts() throws Exception {
+        assertThrows(IOException.class, () -> BundleInstaller.readBounded(
+                new ByteArrayInputStream(new byte[BundleInstaller.MAX_MANIFEST_BYTES + 1]), BundleInstaller.MAX_MANIFEST_BYTES));
+        Map<String, String> excessive = manyFiles(60001);
+        assertThrows(IOException.class, () -> BundleInstaller.Manifest.parse(manifest("too-many", excessive)));
+        File archive = temp.newFile();
+        Files.write(archive.toPath(), zip(excessive));
+        assertThrows(IOException.class, () -> BundleInstaller.validateCentralDirectory(archive));
+    }
+
     @Test public void installsVerifiedBundleAndReusesItWithoutReadingZip() throws Exception {
         Map<String, String> entries = Collections.singletonMap("public/index.html", "游戏完整页面");
         File files = temp.newFolder();
