@@ -2,6 +2,30 @@
 
 当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.2.6-100025)为 v0.2.6，内部 versionCode=100025、安装界面 versionName=0.2.6；仅上传 `Stronghold-Protocol-0.2.6-arm64-v8a.apk`，前一稳定 v0.2.4 及更早版本继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
 
+## 2026-10-17：v0.3.0 补跑、资源容量兼容与发布
+
+上游于北京时间 10 月 16 日 01:34 发布 v0.3.0，fork 最后 schedule 运行 [38584061065](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/38584061065)为 10 月 14 日 22:50，使用移除上游全量测试后的 ee1ff7f，正常检查并跳过构建。之后未见新的定时记录；Actions enabled、工作流 active、默认分支 codex/android、cron `0 10,22 * * *` 均正常。无法从公开 API 确认漏触发的具体平台原因；保留北京时间 06:00、18:00，后续定时恢复待观察，不将手动补跑当作修复 GitHub 调度的证据。
+
+手动补跑 [38992246565](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/38992246565)锁定 `v0.3.0 / c24e17eec3af1e6dedfa9935a6d15245cf2f4586`，完整官方归档 840526600 bytes、SHA256=`5bf3cf3797902e8441aca211706630254c7ebb9636fa0baf301e6c179efcd5b7`。APK 编译成功，离线启动失败；实际资源报告为 31874 文件 / 1172281001 bytes，超过安装器原 30000 文件及 4 MiB 清单容量，同时旧提取规则未纳入新增 `data/local-fx.json`。
+
+修复 3901b01c 将清单与 ZIP 文件数共用 60000 上限，清单有界容量为 16 MiB，保留 4 GiB 资源总量、路径/重复条目/符号链接/哈希/ZIP64 拒绝等校验；从官方归档提取特效索引并验证其素材引用。没有修改游戏规则、长期运行时或签名。
+
+随后运行 38993437062 的资源已扩展为 31875 文件 / 1173502409 bytes、31610 项素材引用无缺失，但启动仍失败。运行 38994253051 增加仅调试包的启动错误日志，并在健康检查前处理首次全屏系统提示后，明确得到 `SP_ERROR: Cannot find module .../tools/assets/skel.mjs imported from .../server/plugins/pack.js`。修复 f044a029 只补齐服务器静态导入的 skel、anim-roles、atlas 三个工具文件，复用现有源码裁剪与拒绝链接的复制逻辑；真实 v0.3.0 裁剪目录已能发出 SP_READY，未将原仓库启动成功误当成打包目录完整的证明。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 安装器本地回归 | 旧实现的 31874 文件 ZIP 与超过 4 MiB 清单两个对照均失败；修复后 12/12 通过，包含超过 60000 文件、超大清单、路径、链接、损坏更新和旧版本保留检查 |
+| 移动工具本地回归 | 特效引用校验与缺失服务器解析器两个负向对照均失败；最终共 24 项，23 通过、1 个无 Gradle 缓存 wrapper 探针跳过、0 失败；真实裁剪目录启动就绪 |
+| 上游全量测试 | 按用户要求未运行；不宣称验证上游全部游戏规则 |
+| Android 构建、单元与 lint | ARM64 Release、x86_64 Debug 构建通过；单元 18 通过、0 失败/跳过；lint 0 errors / 5 warnings；云端移动工具 23 通过、1 个 wrapper 缓存探针跳过 |
+| 完整资源 | 31878 文件 / 1173526785 bytes，31610 项素材引用无缺失；资源 ZIP SHA256=`8bd35ebf677b0b5bacb6264b71afd7e44fbb1ca3bf1842d95acd79a8944522c0`，包含官方特效清单和服务器素材解析器 |
+| API36 / 16 KB / 8 GiB 离线模拟器 | 清数据断网首次解压、昵称进入大厅、WebSocket 和 Activity 真正销毁/重建通过；app3650 / Node3925 不变，uptime5→9、sockets=1 |
+| 云端候选 | [38995166945](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/38995166945)全部成功，内部 code100030；12 个完整候选附件，含源码、实际锁文件、签名/摘要及运行时输入；机器人已写回 v0.3.0 锁文件 |
+| APK 签名及对齐 | ARM64 APK 1214801590 bytes，长期证书一致，签名及 ZIP 16 KB 对齐通过；SHA256=`cffbce65c037db1581390329a27b7be692d61b52600df83cd22fad2832893bf4`，与候选附件摘要一致 |
+| 正式发布 | 用户已明确授权完成后正式发布，仅 APK；尚未发布，保留当前稳定 v0.2.6 |
+
+失败报告在忽略目录 `mobile/build/qa/update-20261017-failed-cloud/`、`update-20261017-fixed-failed-cloud/`、`update-20261017-diagnostic-cloud/`，对应本轮保存的失败和构建日志；直接 JVM 安装器对照与通过记录在 `mobile/build/qa/installer-unit/`，源码裁剪对照与真实启动记录为 `update-20261017-source-before.log`、`update-20261017-source-after.log`、`update-20261017-staged-startup.log`。本轮不操作真机；完整对局、官方特效/语音真机表现、插件导入导出/沙箱/跨升级保留、正式签名覆盖升级、双设备、Doze、网络切换及 API24/低内存设备兼容性仍待验证。
+
 ## 2026-10-14：v0.2.6 构建修复与发布
 
 本轮开始时远端最新正式版为 v0.2.4 / `android-v0.2.4-100018`，v0.2.5 仅有候选草稿。本轮锁定作者 `v0.2.6 / 488db49f11daf862b67ce26fa4cf89aa6cba2466`，使用完整官方归档 583440026 bytes、SHA256=`8ad71ab1111438c483daddf3cba116d20058a5bb813d9a16eccef087a28e2866`。
