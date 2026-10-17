@@ -172,6 +172,8 @@ public final class NodeService extends Service {
         } catch (Exception error) {
             stopChild();
             wanted = false;
+            // 调试包记录真实启动错误，避免系统全屏提示遮住界面上的失败原因。
+            if (BuildConfig.DEBUG) android.util.Log.e("StrongholdNode", "启动失败：" + error.getMessage(), error);
             publish(new Snapshot(State.ERROR, lan, 0, "启动失败：" + error.getMessage(), nonce));
             main.post(this::demoteForeground);
         } finally {

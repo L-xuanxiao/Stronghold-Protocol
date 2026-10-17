@@ -156,6 +156,7 @@ try {
   const activity = run('shell', 'cmd', 'package', 'resolve-activity', '--brief', packageName).trim().split('\n').at(-1);
   if (!activity.includes('/')) throw new Error('launcher activity not resolved');
   run('shell', 'am', 'start', '-n', activity);
+  await waitUi('startup-native', nodes => nodes.some(node => node.package === packageName));
   console.log('Fresh app data cleared; waiting for bundled server');
   run('forward', 'tcp:32173', 'tcp:32173');
   forwarded = true;
