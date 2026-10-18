@@ -140,11 +140,11 @@ v0.2.1 独立源码工作区有 1195 个跟踪文件；新增文档、打包两�
 
 - [x] 核实作者正式 v0.3.1、fork 当前 v0.3.0、现有候选/定时运行；保留原有调度和主工作区。
 - [x] 手动运行现有候选工作流，核对 v0.3.1 锁定源码、资源、两 ABI 构建、Android 单元/lint、16 KB 离线模拟器和长期签名；失败则按日志修复根因并复测。
-- [x] 修复真实启动报错：补齐 acorn 和 official-tables/cache/sources/network/env-proxy；两个负向对照按预期失败，修复后真实裁剪目录 SP_READY；本机工具 22 通过/2 环境跳过，云端复验待完成。
+- [x] 修复真实启动报错：补齐 acorn 和 official-tables/cache/sources/network/env-proxy；两个负向对照按预期失败，修复后真实裁剪目录 SP_READY；本机工具 22 通过/2 环境跳过，云端复验已通过。
 - [x] 根据作者正式说明整理 Android v0.3.1 发布说明及验证记录，明确实际检查与未验证范围。
-- [ ] 等候选机器人写回后在维护 worktree fast-forward；提交说明，使用已有正式发布门禁公开同一 APK。
-- [ ] 核对 latest、唯一 APK、摘要/版本/源码标签和完整 inputs 草稿，记录结果。
+- [x] 等候选机器人写回后在维护 worktree fast-forward；提交说明，使用已有正式发布门禁公开同一 APK。
+- [x] 核对 latest、唯一 APK、摘要/版本/源码标签和完整 inputs 草稿，记录结果。
 
 ### 结果审查
 
-进行中。用户已授权本次构建和正式发布；继续跳过上游全量游戏测试，不恢复真机操作。北京时间 06:00/18:00 调度不变，平台漏触发原因仍未确认。
+已完成。[Android v0.3.1](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.3.1-100032) 于北京时间 2026-10-18 14:28:59 正式发布为 latest，仅公开同一份经过验证的 ARM64 APK。首次候选 39102504604 因新增运行依赖未打包而启动失败；修复 c1aaa80a 后，候选 39103409573 全部成功，移动工具云端 23 通过/1 跳过、Android 单元 18/18、lint 0 errors/5 warnings、API36/16 KB 断网首启及重建通过；真实裁剪目录和旧版 fixture 检查通过。正式门禁 39104118102 再次检查真实签名、包名、版本和摘要，公开唯一附件 SHA256=60a16ff614d255382bfb1b9f34b6924f9bcaa584ffea06518fafd6f881d20391、1221371574 bytes；源码标签 8bc6575b 含真实锁文件，12 个完整输入在 inputs-android-v0.3.1-100032 草稿，旧稳定 v0.3.0 保留。主工作区 clean 且 HEAD 仍为 5e45d2b6；只更新维护 worktree。上游全量游戏测试和真机测试未执行；完整对局、新 UI/插件/特效/语音真机行为、覆盖升级、双设备、Doze、网络切换与 API24/低内存设备仍待验证。北京时间 06:00/18:00 调度不变，漏触发原因及恢复情况仍未确认；详见 mobile/VALIDATION.md。

@@ -1,6 +1,6 @@
 # Android 验证与发布记录
 
-当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.3.0-100030)为 v0.3.0，内部 versionCode=100030、安装界面 versionName=0.3.0；仅上传 `Stronghold-Protocol-0.3.0-arm64-v8a.apk`，前一稳定 v0.2.6 及更早版本继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
+当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.3.1-100032)为 v0.3.1，内部 versionCode=100032、安装界面 versionName=0.3.1；仅上传 `Stronghold-Protocol-0.3.1-arm64-v8a.apk`，前一稳定 v0.3.0 及更早版本继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
 
 ## 2026-10-18：v0.3.1 更新与发布
 
@@ -17,9 +17,9 @@
 | 资源 | 32009 文件 / 1180073139 bytes；31629 项素材引用无缺失；资源 ZIP SHA256=`a54cb7cfa11029c0561dae3a9aa44d1ad9aea13e62940e66a8d3f030b7f6057c` |
 | API36 / 16 KB / 8 GiB 离线模拟器 | 清数据断网首次解压、昵称进入大厅、WebSocket、Activity 销毁重建及昵称保留通过；app3694 / Node4259 不变，uptime8→14，sockets=1；截图已人工查看 |
 | 签名与候选输入 | 12 个完整附件；包名及长期证书一致，签名及 ZIP 16 KB 对齐通过；APK 1221371574 bytes，SHA256=`60a16ff614d255382bfb1b9f34b6924f9bcaa584ffea06518fafd6f881d20391`，候选附件 digest 一致 |
-| 正式发布 | 待使用已有发布门禁重新核对同一 APK，再记录 latest、唯一附件、输入备份和源码标签 |
+| 正式发布 | [39104118102](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/39104118102) 成功，实际重新核对签名、包名、版本和摘要；北京时间 2026-10-18 14:28:59 发布并设为 latest，公开唯一 APK 与候选摘要一致；12 个完整输入保留在 `inputs-android-v0.3.1-100032` 草稿；源码标签 8bc6575b 含真实 v0.3.1 锁文件，v0.3.0 保留 |
 
-成功报告在 `success-cloud/`，完整日志 `success-build.log`，实际候选锁与元数据在 `final-lock/`、`candidate/`；以上路径相对 `mobile/build/qa/update-20261018/`。
+成功报告在 `success-cloud/`，完整日志 `success-build.log`，实际候选锁与元数据在 `final-lock/`、`candidate/`；正式元数据 `published.json`、`inputs.json` 与发布日志 `publish.log` 保存同目录。公开完整正文与 RELEASE-NOTES.md 核对一致，源码标签锁文件与候选一致；主工作区 clean，HEAD 保持 5e45d2b6。以上路径相对 `mobile/build/qa/update-20261018/`。
 
 失败日志、Android 报告、实际锁文件、上游 Release 元数据及裁剪目录启动证据保存在忽略目录 `mobile/build/qa/update-20261018/`。最后可见 schedule 仍为 10 月 14 日，原定北京时间 06:00/18:00 不变；手动构建不能证明平台漏触发已修复。
 

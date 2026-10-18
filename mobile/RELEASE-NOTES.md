@@ -23,7 +23,7 @@
 
 ### 验证范围与自动检查
 
-本轮 ARM64 Release / x86_64 Debug 构建通过，Android 单元 **18/18**，lint **0 错误 / 5 警告**，移动工具 **23 通过 / 1 个无缓存探针跳过**；**31,629 项素材引用无缺失**。Android16 / 16 KB 模拟器清数据断网首启、实际进入大厅、WebSocket、Activity 销毁重建及昵称保留均通过，重建前后 Node 进程一致；长期签名及 16 KB 对齐校验通过，正式发布门禁还会重新核对真实签名、包名、版本和摘要。按维护者要求跳过上游全量游戏测试；不追加真机测试。完整对局、新界面/特效/音频真机表现、插件导入导出/沙箱/跨升级保留、正式签名覆盖升级、双设备、Doze、网络切换及 Android 7.0 / 低内存设备兼容性仍待验证。详见 [验证记录](https://github.com/L-xuanxiao/Stronghold-Protocol/blob/codex/android/mobile/VALIDATION.md)。
+本轮 ARM64 Release / x86_64 Debug 构建通过，Android 单元 **18/18**，lint **0 错误 / 5 警告**，移动工具 **23 通过 / 1 个无缓存探针跳过**；**31,629 项素材引用无缺失**。Android16 / 16 KB 模拟器清数据断网首启、实际进入大厅、WebSocket、Activity 销毁重建及昵称保留均通过，重建前后 Node 进程一致；长期签名及 16 KB 对齐校验通过，正式发布门禁已重新核对真实签名、包名、版本和摘要，公开唯一 APK 与候选摘要一致。按维护者要求跳过上游全量游戏测试；不追加真机测试。完整对局、新界面/特效/音频真机表现、插件导入导出/沙箱/跨升级保留、正式签名覆盖升级、双设备、Doze、网络切换及 Android 7.0 / 低内存设备兼容性仍待验证。详见 [验证记录](https://github.com/L-xuanxiao/Stronghold-Protocol/blob/codex/android/mobile/VALIDATION.md)。
 
 检查计划保持北京时间每天 **06:00、18:00**。本轮为维护者手动补跑；GitHub 调度漏触发原因仍未确认，不保证准点或必达，后续恢复待观察。手机需手动下载新版 APK。
 
