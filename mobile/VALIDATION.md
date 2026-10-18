@@ -2,6 +2,29 @@
 
 当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.3.0-100030)为 v0.3.0，内部 versionCode=100030、安装界面 versionName=0.3.0；仅上传 `Stronghold-Protocol-0.3.0-arm64-v8a.apk`，前一稳定 v0.2.6 及更早版本继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
 
+## 2026-10-18：v0.3.1 更新与发布
+
+本轮锁定作者 `v0.3.1 / b3deebdae4a92642c007d217a1a4573e5d3612c5`，完整官方归档 845522197 bytes、SHA256=`d2f48f7fd2698f330b86c897d93ada2d7066825593cce4de8add46dfa68c3db1`。用户明确授权构建和正式发布；本轮不追加真机测试，继续跳过上游全量游戏测试。
+
+首次候选 [39102504604](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/39102504604) 的两 ABI 构建、单元和 lint 通过，16 KB 离线启动失败，未签名/发布。真实日志 SP_ERROR 指向工作台新增 `acorn`；真实裁剪目录继续发现 Forge 导入器静态依赖的 `tools/assets/official-tables.mjs` 缺失。修复 c1aaa80a 仅补齐 acorn 及 official-tables/cache/sources/network/env-proxy 依赖链，沿用拒绝符号链接的复制逻辑；按新版入口/依赖是否存在兼容旧版恢复构建，未修改游戏规则、运行时锁、签名或工作流门禁。两个负向对照均复现缺失模块错误，修复后真实 v0.3.1 裁剪目录输出 SP_READY；移动工具本地 22 通过、2 环境跳过（无 Gradle 分发缓存、无 Bash），无失败。图谱 MCP 本轮 Transport closed，已按技能回退到定向源码核实。
+
+云端复验 [39103409573](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/39103409573) 全部成功，候选 `android-v0.3.1-100032`，机器人已写回实际锁文件（ccaad3f4）。旧版本 fixture 在不提供新版依赖时仍能打包，兼容检查通过。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 移动工具 | 云端 23 通过、1 个无 Gradle 分发缓存探针跳过、0 失败；实际 Gradle 构建通过 |
+| Android | ARM64 Release / x86_64 Debug 构建通过；单元 18/18、lint 0 errors / 5 warnings |
+| 资源 | 32009 文件 / 1180073139 bytes；31629 项素材引用无缺失；资源 ZIP SHA256=`a54cb7cfa11029c0561dae3a9aa44d1ad9aea13e62940e66a8d3f030b7f6057c` |
+| API36 / 16 KB / 8 GiB 离线模拟器 | 清数据断网首次解压、昵称进入大厅、WebSocket、Activity 销毁重建及昵称保留通过；app3694 / Node4259 不变，uptime8→14，sockets=1；截图已人工查看 |
+| 签名与候选输入 | 12 个完整附件；包名及长期证书一致，签名及 ZIP 16 KB 对齐通过；APK 1221371574 bytes，SHA256=`60a16ff614d255382bfb1b9f34b6924f9bcaa584ffea06518fafd6f881d20391`，候选附件 digest 一致 |
+| 正式发布 | 待使用已有发布门禁重新核对同一 APK，再记录 latest、唯一附件、输入备份和源码标签 |
+
+成功报告在 `success-cloud/`，完整日志 `success-build.log`，实际候选锁与元数据在 `final-lock/`、`candidate/`；以上路径相对 `mobile/build/qa/update-20261018/`。
+
+失败日志、Android 报告、实际锁文件、上游 Release 元数据及裁剪目录启动证据保存在忽略目录 `mobile/build/qa/update-20261018/`。最后可见 schedule 仍为 10 月 14 日，原定北京时间 06:00/18:00 不变；手动构建不能证明平台漏触发已修复。
+
+完整对局、新界面/特效/语音真机表现、插件导入导出/沙箱/跨升级保留、正式签名覆盖升级、双设备、Doze、网络切换及 API24/低内存设备仍待验证。上游 Forge 导入部分池外干员数据需联网，不能宣称所有新插件功能均离线可用。当前对局不支持跨进程存档。
+
 ## 2026-10-17：v0.3.0 补跑、资源容量兼容与发布
 
 上游于北京时间 10 月 16 日 01:34 发布 v0.3.0，fork 最后 schedule 运行 [38584061065](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/38584061065)为 10 月 14 日 22:50，使用移除上游全量测试后的 ee1ff7f，正常检查并跳过构建。之后未见新的定时记录；Actions enabled、工作流 active、默认分支 codex/android、cron `0 10,22 * * *` 均正常。无法从公开 API 确认漏触发的具体平台原因；保留北京时间 06:00、18:00，后续定时恢复待观察，不将手动补跑当作修复 GitHub 调度的证据。
