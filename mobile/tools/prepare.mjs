@@ -157,7 +157,13 @@ export async function stageGameSource(source, destination) {
   await copyTree(path.join(source, 'docs/research'), path.join(destination, 'docs/research'));
   // v0.3.0 的服务器直接导入这些解析器，不能再将整个 tools 目录视为仅构建时使用。
   for (const name of ['skel.mjs', 'anim-roles.mjs', 'atlas.mjs']) await copyTree(path.join(source, 'tools/assets', name), path.join(destination, 'tools/assets', name));
+  // 新版 Forge 导入器依赖官方数据表下载器及其静态依赖；旧版没有此入口。
+  if (exists(path.join(source, 'tools/assets/official-tables.mjs'))) {
+    for (const name of ['official-tables.mjs', 'cache.mjs', 'sources.mjs', 'network.mjs', 'env-proxy.mjs']) await copyTree(path.join(source, 'tools/assets', name), path.join(destination, 'tools/assets', name));
+  }
   await copyTree(path.join(source, 'node_modules/ws'), path.join(destination, 'node_modules/ws'));
+  // v0.3.1 工作台在服务端解析脚本；旧版恢复包尚未声明此依赖。
+  if ((await json(path.join(source, 'package.json'))).dependencies?.acorn) await copyTree(path.join(source, 'node_modules/acorn'), path.join(destination, 'node_modules/acorn'));
   await fsp.writeFile(path.join(destination, 'node_modules/package.json'), '{"type":"commonjs"}\n');
 }
 async function prepareGame(gameLock, runtimeLock, { offline = false } = {}) {

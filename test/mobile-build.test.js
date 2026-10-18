@@ -35,17 +35,22 @@ function elf({ alignment = 16384, needed = [], machine = 183 } = {}) {
   records.forEach(([tag, value], i) => { b.writeBigInt64LE(BigInt(tag), 192 + i * 16); b.writeBigUInt64LE(BigInt(value), 200 + i * 16); }); return b;
 }
 
-test('打包后的服务器保留 v0.3.0 静态导入的素材解析器', async (t) => {
+test('打包后的服务器保留素材解析器和 v0.3.1 工作台运行依赖', async (t) => {
   const dir = await temporary(t), source = path.join(dir, 'source'), staged = path.join(dir, 'staged');
   const files = {
-    'package.json': '{"type":"module"}',
-    'server/index.js': "import '../tools/assets/skel.mjs'; import '../tools/assets/anim-roles.mjs'; import '../tools/assets/atlas.mjs';",
+    'package.json': '{"type":"module","dependencies":{"acorn":"8.18.0"}}',
+    'server/index.js': "import '../tools/assets/skel.mjs'; import '../tools/assets/anim-roles.mjs'; import '../tools/assets/atlas.mjs'; import '../tools/assets/official-tables.mjs'; import { parse } from 'acorn'; if (parse('const x = 1').type !== 'Program') throw Error('parser unavailable');",
     'shared/index.js': '', 'data/index.json': '{}', 'public/index.html': '',
     'LICENSE': 'license', 'NOTICE.md': 'notice', 'THIRD-PARTY-NOTICES.md': 'third party',
     'docs/research/table.md': 'table', 'node_modules/ws/package.json': '{"type":"commonjs"}',
+    'node_modules/acorn/package.json': '{"type":"module","exports":"./index.js"}',
+    'node_modules/acorn/index.js': 'export const parse = () => ({ type: "Program" });',
     'tools/assets/skel.mjs': 'export const parseSkel = () => {};',
     'tools/assets/anim-roles.mjs': 'export const resolveRoles = () => {};',
     'tools/assets/atlas.mjs': 'export const atlasInfo = () => {};',
+    'tools/assets/official-tables.mjs': "import './cache.mjs';",
+    'tools/assets/cache.mjs': "import './sources.mjs'; import './network.mjs'; import './env-proxy.mjs';",
+    'tools/assets/sources.mjs': '', 'tools/assets/network.mjs': '', 'tools/assets/env-proxy.mjs': '',
   };
   for (const [rel, bytes] of Object.entries(files)) {
     const file = path.join(source, rel); await fsp.mkdir(path.dirname(file), { recursive: true }); await fsp.writeFile(file, bytes);
