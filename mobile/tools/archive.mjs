@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import { inflateRawSync } from 'node:zlib';
+import { createDeflateRaw, inflateRawSync } from 'node:zlib';
+import { pipeline } from 'node:stream/promises';
 import { createHash } from 'node:crypto';
 
 export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -37,38 +38,62 @@ export function crc32(bytes, previous = 0) {
 }
 
 // 固定时间、排序和压缩方式；资源内容相同就得到同一 ZIP，不依赖宿主机文件时间。
-export async function writeZip(root, output) {
+export async function writeZip(root, output, { compress = false } = {}) {
   const files = await regularFiles(root);
   if (files.length > 65535) throw new Error('ZIP 文件数量超限，需要显式升级 ZIP64 格式');
   await fsp.mkdir(path.dirname(output), { recursive: true });
   const handle = await fsp.open(`${output}.part`, 'w');
   const central = [];
   let offset = 0;
-  try {
-    for (const rel of files) {
-      const name = Buffer.from(rel);
-      const file = path.join(root, ...rel.split('/'));
-      const size = (await fsp.stat(file)).size;
-      let crc = 0;
-      for await (const chunk of fs.createReadStream(file)) crc = crc32(chunk, crc);
-      const local = Buffer.alloc(30);
-      local.writeUInt32LE(0x04034b50); local.writeUInt16LE(20, 4); local.writeUInt16LE(0x800, 6);
-      local.writeUInt16LE(33, 12); local.writeUInt32LE(crc, 14); local.writeUInt32LE(size, 18); local.writeUInt32LE(size, 22); local.writeUInt16LE(name.length, 26);
-      await handle.write(local); await handle.write(name);
-      for await (const chunk of fs.createReadStream(file)) await handle.write(chunk);
-      const record = Buffer.alloc(46);
-      record.writeUInt32LE(0x02014b50); record.writeUInt16LE(0x314, 4); record.writeUInt16LE(20, 6); record.writeUInt16LE(0x800, 8);
-      record.writeUInt16LE(33, 14); record.writeUInt32LE(crc, 16); record.writeUInt32LE(size, 20); record.writeUInt32LE(size, 24);
-      record.writeUInt16LE(name.length, 28); record.writeUInt32LE(0x81a40000, 38); record.writeUInt32LE(offset, 42);
-      central.push(record, name); offset += local.length + name.length + size;
-      if (offset > 0xffffffff) throw new Error('ZIP 超过 4 GiB，需要 ZIP64');
+  const write = async (bytes, position) => {
+    const start = position ?? offset;
+    if (start + bytes.length > 0xffffffff) throw new Error('ZIP 超过 4 GiB，需要 ZIP64');
+    for (let done = 0; done < bytes.length;) {
+      const { bytesWritten } = await handle.write(bytes, done, bytes.length - done, start + done);
+      if (!bytesWritten) throw new Error('ZIP 写入未取得进展');
+      done += bytesWritten;
     }
-    const centralStart = offset;
-    for (const record of central) { await handle.write(record); offset += record.length; }
-    const end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50); end.writeUInt16LE(files.length, 8); end.writeUInt16LE(files.length, 10);
-    end.writeUInt32LE(offset - centralStart, 12); end.writeUInt32LE(centralStart, 16); await handle.write(end);
-  } finally { await handle.close(); }
-  await fsp.rename(`${output}.part`, output);
+    if (position === undefined) offset += bytes.length;
+  };
+  try {
+    try {
+      for (const rel of files) {
+        const name = Buffer.from(rel);
+        const file = path.join(root, ...rel.split('/'));
+        const localOffset = offset, method = compress ? 8 : 0;
+        let crc = 0, size = 0, compressedSize = 0;
+        const local = Buffer.alloc(30);
+        local.writeUInt32LE(0x04034b50); local.writeUInt16LE(20, 4); local.writeUInt16LE(0x800, 6);
+        local.writeUInt16LE(method, 8); local.writeUInt16LE(33, 12); local.writeUInt16LE(name.length, 26);
+        await write(local); await write(name);
+        await pipeline(fs.createReadStream(file), async function* (source) {
+          for await (const chunk of source) {
+            crc = crc32(chunk, crc); size += chunk.length;
+            if (size > 0xffffffff) throw new Error('ZIP 文件超过 4 GiB，需要 ZIP64');
+            yield chunk;
+          }
+        }, ...(compress ? [createDeflateRaw({ level: 6 })] : []), async source => {
+          for await (const chunk of source) { compressedSize += chunk.length; await write(chunk); }
+        });
+        // 回填已知长度，保持本地头和中央目录一致，不依赖 data descriptor。
+        local.writeUInt32LE(crc, 14); local.writeUInt32LE(compressedSize, 18); local.writeUInt32LE(size, 22);
+        await write(local, localOffset);
+        const record = Buffer.alloc(46);
+        record.writeUInt32LE(0x02014b50); record.writeUInt16LE(0x314, 4); record.writeUInt16LE(20, 6); record.writeUInt16LE(0x800, 8);
+        record.writeUInt16LE(method, 10); record.writeUInt16LE(33, 14); record.writeUInt32LE(crc, 16); record.writeUInt32LE(compressedSize, 20); record.writeUInt32LE(size, 24);
+        record.writeUInt16LE(name.length, 28); record.writeUInt32LE(0x81a40000, 38); record.writeUInt32LE(localOffset, 42);
+        central.push(record, name);
+      }
+      const centralStart = offset;
+      for (const record of central) await write(record);
+      const end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50); end.writeUInt16LE(files.length, 8); end.writeUInt16LE(files.length, 10);
+      end.writeUInt32LE(offset - centralStart, 12); end.writeUInt32LE(centralStart, 16); await write(end);
+    } finally { await handle.close(); }
+    await fsp.rename(`${output}.part`, output);
+  } catch (error) {
+    await fsp.rm(`${output}.part`, { force: true });
+    throw error;
+  }
   return files;
 }
 

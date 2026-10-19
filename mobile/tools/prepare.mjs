@@ -212,9 +212,11 @@ async function prepareGame(gameLock, runtimeLock, { offline = false } = {}) {
   const bundleId = `game-${gameLock.version}-${sha256(JSON.stringify(files)).slice(0, 24)}`;
   const manifest = { schema: 1, bundleId, gameVersion: gameLock.version, upstreamCommit: gameLock.commit, files };
   const assetsDir = path.join(BUILD, 'assets'); await fsp.mkdir(assetsDir, { recursive: true });
-  await writeZip(destination, path.join(assetsDir, 'game.zip'));
+  const archiveStarted = performance.now();
+  await writeZip(destination, path.join(assetsDir, 'game.zip'), { compress: true });
+  const archiveMs = Math.round(performance.now() - archiveStarted);
   await saveJson(path.join(assetsDir, 'game-manifest.json'), manifest);
-  return { bundleId, files: files.length, size: files.reduce((sum, file) => sum + file.size, 0), archiveSha256: await hashFile(path.join(assetsDir, 'game.zip')), assets, fonts, source, assetsDir };
+  return { bundleId, files: files.length, size: files.reduce((sum, file) => sum + file.size, 0), archiveMs, archiveSha256: await hashFile(path.join(assetsDir, 'game.zip')), assets, fonts, source, assetsDir };
 }
 export async function checkPrepared(gameLock, runtimeLock, abi) {
   const manifest = await json(path.join(BUILD, 'assets/game-manifest.json'));

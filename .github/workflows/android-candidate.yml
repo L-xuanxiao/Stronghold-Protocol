@@ -7,6 +7,10 @@ on:
         description: '使用当前 game.lock.json 构建恢复包；需先恢复上一稳定游戏的锁文件'
         type: boolean
         default: false
+      compression_benchmark:
+        description: '仅手动：固定 v0.3.1，构建 STORE 对照并执行六次断网首启和覆盖升级；不正式发布'
+        type: boolean
+        default: false
   schedule:
     - cron: '0 10,22 * * *'
   push:
@@ -62,7 +66,7 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ github.token }}
-          USE_LOCKED_GAME: ${{ github.event_name == 'workflow_dispatch' && inputs.use_locked_game }}
+          USE_LOCKED_GAME: ${{ github.event_name == 'workflow_dispatch' && (inputs.use_locked_game || inputs.compression_benchmark) }}
       - id: code
         shell: bash
         env:
@@ -120,9 +124,10 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-    timeout-minutes: 70
+    timeout-minutes: ${{ inputs.compression_benchmark && 120 || 70 }}
     env:
       GRADLE_USER_HOME: ${{ github.workspace }}/.cache/gradle
+      COMPRESSION_BENCHMARK: ${{ github.event_name == 'workflow_dispatch' && inputs.compression_benchmark }}
       SP_E2E: '0'
       SP_REAL_E2E: '0'
       RENDER_E2E: '0'
@@ -169,30 +174,54 @@ jobs:
         run: node mobile/tools/runtime-inputs.mjs import --file=mobile/build/runtime-inputs.zip
       - name: Prepare ARM64 game and runtime
         run: |
-          node mobile/tools/prepare.mjs --abi=arm64-v8a
+          mkdir -p mobile/build/qa
+          /usr/bin/time -f '%e' -o mobile/build/qa/prepare-seconds.txt node mobile/tools/prepare.mjs --abi=arm64-v8a
           cp mobile/build/build.json mobile/build/phone-build.json
       - name: Android toolchain
         run: |
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36.1' 'build-tools;36.1.0'
           chmod +x mobile/android/gradlew
+      - name: Prepare identical STORE compression baseline
+        if: env.COMPRESSION_BENCHMARK == 'true'
+        run: node mobile/ci/compression-prepare.mjs
+      - name: Build unsigned STORE phone baseline
+        if: env.COMPRESSION_BENCHMARK == 'true'
+        working-directory: mobile/android
+        env:
+          CODE: ${{ needs.check.outputs.code }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          /usr/bin/time -f '%e' -o ../build/qa/baseline-arm64-build-seconds.txt ./gradlew :app:assembleRelease --console=plain --no-daemon -PcompileSdk=android-36.1 -PgameAbi=arm64-v8a -PmobileVersionCode="$CODE" -PgameVersion="$VERSION" -PgameAssetsDir="$GITHUB_WORKSPACE/mobile/build/compression-baseline"
+          cp app/build/outputs/apk/release/app-release-unsigned.apk ../build/compression-baseline-arm64.apk
       - name: Build unsigned phone APK
         working-directory: mobile/android
         env:
           CODE: ${{ needs.check.outputs.code }}
           VERSION: ${{ needs.check.outputs.version }}
         run: |
-          ./gradlew :app:assembleRelease :app:testDebugUnitTest :app:lintRelease --console=plain --no-daemon -PcompileSdk=android-36.1 -PgameAbi=arm64-v8a -PmobileVersionCode="$CODE" -PgameVersion="$VERSION"
+          /usr/bin/time -f '%e' -o ../build/qa/compressed-arm64-build-seconds.txt ./gradlew :app:assembleRelease :app:testDebugUnitTest :app:lintRelease --console=plain --no-daemon -PcompileSdk=android-36.1 -PgameAbi=arm64-v8a -PmobileVersionCode="$CODE" -PgameVersion="$VERSION"
       - name: Prepare emulator runtime
         run: node mobile/tools/prepare.mjs --abi=x86_64 --runtime-only
+      - name: Create shared emulator signing identity
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.cache/android-signing"
+          keytool -genkeypair -keystore "$GITHUB_WORKSPACE/.cache/android-signing/debug.keystore" -alias androiddebugkey -storepass android -keypass android -dname 'CN=Android Debug' -keyalg RSA -validity 10000
+      - name: Build STORE emulator baseline
+        if: env.COMPRESSION_BENCHMARK == 'true'
+        working-directory: mobile/android
+        env:
+          CODE: ${{ needs.check.outputs.code }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          /usr/bin/time -f '%e' -o ../build/qa/baseline-x86-build-seconds.txt ./gradlew :app:assembleDebug --console=plain --no-daemon -PcompileSdk=android-36.1 -PgameAbi=x86_64 -PmobileVersionCode="$CODE" -PgameVersion="$VERSION" -PgameAssetsDir="$GITHUB_WORKSPACE/mobile/build/compression-baseline"
+          cp app/build/outputs/apk/debug/app-debug.apk ../build/compression-baseline-x86_64.apk
       - name: Build emulator APK
         working-directory: mobile/android
         env:
           CODE: ${{ needs.check.outputs.code }}
           VERSION: ${{ needs.check.outputs.version }}
         run: |
-          mkdir -p "$GITHUB_WORKSPACE/.cache/android-signing"
-          keytool -genkeypair -keystore "$GITHUB_WORKSPACE/.cache/android-signing/debug.keystore" -alias androiddebugkey -storepass android -keypass android -dname 'CN=Android Debug' -keyalg RSA -validity 10000
-          ./gradlew :app:assembleDebug --console=plain --no-daemon -PcompileSdk=android-36.1 -PgameAbi=x86_64 -PmobileVersionCode="$CODE" -PgameVersion="$VERSION"
+          /usr/bin/time -f '%e' -o ../build/qa/compressed-x86-build-seconds.txt ./gradlew :app:assembleDebug --console=plain --no-daemon -PcompileSdk=android-36.1 -PgameAbi=x86_64 -PmobileVersionCode="$CODE" -PgameVersion="$VERSION"
       - name: Allow emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -210,7 +239,13 @@ jobs:
           # WebView 使用 GLES；关闭无头宿主的 Vulkan 路径，保留硬件加速和 16 KB 镜像。
           emulator-options: -no-window -gpu swangle -no-snapshot -noaudio -no-boot-anim -feature -Vulkan
           disable-animations: true
-          script: node mobile/ci/emulator-smoke.mjs mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          script: ${{ env.COMPRESSION_BENCHMARK == 'true' && 'node mobile/ci/compression-benchmark.mjs mobile/build/compression-baseline-x86_64.apk mobile/android/app/build/outputs/apk/debug/app-debug.apk mobile/build/compression-baseline-arm64.apk mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk' || 'node mobile/ci/emulator-smoke.mjs mobile/android/app/build/outputs/apk/debug/app-debug.apk' }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always() && env.COMPRESSION_BENCHMARK == 'true'
+        with:
+          name: compression-baseline-apks
+          path: mobile/build/compression-baseline-*.apk
+          retention-days: 1
       - name: Emulator failure diagnostics
         if: failure()
         run: |

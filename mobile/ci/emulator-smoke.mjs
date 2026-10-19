@@ -12,9 +12,11 @@ const run = (...more) => {
   return result.stdout;
 };
 const apk = process.argv[2];
+const keepData = process.env.SMOKE_KEEP_DATA === '1';
+const seedSettings = process.env.SMOKE_SEED_SETTINGS === '1';
 if (!apk) throw new Error('usage: node mobile/ci/emulator-smoke.mjs <apk>');
 const packageName = 'io.github.strongholdprotocol.mobile';
-const output = path.resolve('mobile/build/qa');
+const output = path.resolve(process.env.SMOKE_OUTPUT || 'mobile/build/qa');
 await fs.mkdir(output, { recursive: true });
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const decode = value => value.replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
@@ -100,7 +102,7 @@ async function connectWebView() {
     close: () => socket.close(),
     insertText: text => command('Input.insertText', { text }),
     evaluate: async expression => {
-      const result = await command('Runtime.evaluate', { expression, returnByValue: true, userGesture: true });
+      const result = await command('Runtime.evaluate', { expression, returnByValue: true, userGesture: true, awaitPromise: true });
       if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
       return result.result?.value;
     },
@@ -127,11 +129,14 @@ function nodePid() {
   return Number(children[0].trim().split(/\s+/)[0]);
 }
 let original;
+let emulatorVerified = false;
+let launchStarted;
 let forwarded = false;
 const debugPorts = [];
 let webView;
 try {
   if (run('shell', 'getprop', 'ro.boot.qemu').trim() !== '1') throw new Error('fresh-data smoke must run on a disposable emulator');
+  emulatorVerified = true;
   const pages = Number(run('shell', 'getconf', 'PAGE_SIZE').trim());
   const sdk = Number(run('shell', 'getprop', 'ro.build.version.sdk').trim());
   if (sdk !== 36 || pages !== 16384) throw new Error(`Android 16 / 16 KB required, got API ${sdk}, page size ${pages}`);
@@ -152,12 +157,13 @@ try {
   console.log(`Installing APK on Android ${sdk}, ${pages}-byte pages, external network disabled`);
   run('install', '-r', apk);
   // 独立测试设备上清理数据，避免上一轮解压缓存掩盖首次离线启动的问题。
-  if (run('shell', 'pm', 'clear', packageName).trim() !== 'Success') throw new Error('could not clear smoke-test app data');
+  if (!keepData && run('shell', 'pm', 'clear', packageName).trim() !== 'Success') throw new Error('could not clear smoke-test app data');
   const activity = run('shell', 'cmd', 'package', 'resolve-activity', '--brief', packageName).trim().split('\n').at(-1);
   if (!activity.includes('/')) throw new Error('launcher activity not resolved');
+  launchStarted = performance.now();
   run('shell', 'am', 'start', '-n', activity);
   await waitUi('startup-native', nodes => nodes.some(node => node.package === packageName));
-  console.log('Fresh app data cleared; waiting for bundled server');
+  console.log(`${keepData ? 'Retained upgrade data' : 'Fresh app data cleared'}; waiting for bundled server`);
   run('forward', 'tcp:32173', 'tcp:32173');
   forwarded = true;
   let health;
@@ -180,11 +186,26 @@ try {
   webView = await connectWebView();
   await waitDom('title', state => state.text.includes('STRONGHOLD PROTOCOL') && state.text.includes('博士代号') && state.text.includes('已连接服务器')
     && state.inputs.some(input => input.type === 'text'));
-  await webView.evaluate('[...document.querySelectorAll("input")].find(input=>input.type==="text").focus()');
-  await webView.insertText('AndroidQA');
+  if (keepData) {
+    await waitDom('upgrade-nickname', state => state.inputs.some(input => input.type === 'text' && input.value === 'AndroidQA'));
+  } else {
+    await webView.evaluate('[...document.querySelectorAll("input")].find(input=>input.type==="text").focus()');
+    await webView.insertText('AndroidQA');
+  }
   await waitDom('nickname-input', state => state.inputs.some(input => input.type === 'text' && input.value === 'AndroidQA'));
   await webView.evaluate('[...document.querySelectorAll("button")].find(button=>button.innerText.trim()==="开始"&&!button.disabled).click()');
   await waitDom('lobby', state => state.text.includes('选择模拟协议') && state.text.includes('独立模拟') && state.text.includes('AndroidQA'));
+  const launchToLobbyMs = Math.round(performance.now() - launchStarted);
+  let settings;
+  if (seedSettings || keepData) {
+    settings = await webView.evaluate(`import('/js/ui/settings.js').then(({updateSettings,settingsStore})=>{
+      ${seedSettings ? 'updateSettings({bgm:0.35,muted:true,quality:"low"});' : ''}
+      return {active:settingsStore.get(),saved:JSON.parse(localStorage.getItem('sp.pref.settings'))};
+    })`);
+    for (const state of [settings.active, settings.saved]) {
+      if (state?.bgm !== 0.35 || state?.muted !== true || state?.quality !== 'low') throw new Error('saved game settings were not retained');
+    }
+  }
   console.log('Visible game title and nickname-to-lobby interaction passed');
   health = await healthNow();
   if (!Number.isInteger(health.sockets) || health.sockets < 1) throw new Error('visible WebView did not connect to the local game WebSocket');
@@ -212,28 +233,40 @@ try {
   if (!again.ok || before.app !== after.app || before.node !== after.node || after.uptimeSec < before.uptimeSec) {
     throw new Error('Activity recreation restarted or lost the local server');
   }
-  await fs.writeFile(path.join(output, 'smoke.json'), JSON.stringify({ health: again, apiLevel: sdk, pageSize: pages, activity, before, after,
-    verified: ['fresh offline launch without external network', 'bundled resources', 'visible game UI', 'nickname and lobby interaction',
-      'WebView WebSocket connection', 'Activity destruction and recreation', 'same Node process', 'nickname retention'] }, null, 2));
+  let bundle;
+  if (seedSettings || keepData) {
+    const manifest = JSON.parse(await fs.readFile('mobile/build/assets/game-manifest.json', 'utf8'));
+    if (!/^[A-Za-z0-9._-]{1,128}$/.test(manifest.bundleId)) throw new Error('invalid benchmark bundle ID');
+    const marker = `files/bundles/${manifest.bundleId}/.verified`;
+    bundle = { id: manifest.bundleId,
+      marker: run('shell', 'run-as', packageName, 'cat', marker).trim(),
+      stat: run('shell', 'run-as', packageName, 'stat', '-c', '%i:%Y:%s', marker).trim() };
+    if (!/^[a-f0-9]{64}$/.test(bundle.marker) || !/^\d+:\d+:64$/.test(bundle.stat)) throw new Error('invalid installed bundle marker');
+  }
+  await fs.writeFile(path.join(output, 'smoke.json'), JSON.stringify({ launchToLobbyMs, keepData, settings, bundle, health: again, apiLevel: sdk, pageSize: pages, activity, before, after,
+    verified: [keepData ? 'retained-data offline upgrade without external network' : 'fresh offline launch without external network', 'bundled resources', 'visible game UI', 'nickname and lobby interaction',
+      'WebView WebSocket connection', 'Activity destruction and recreation', 'same Node process', 'nickname retention', ...(settings ? ['saved game settings retention'] : [])] }, null, 2));
   console.log(`Android smoke passed, page size=${pages}`);
 } finally {
   webView?.close();
-  const logs = spawnSync(adb, [...args, 'logcat', '-d'], { encoding: 'utf8', maxBuffer: 32 << 20, timeout: 60000, windowsHide: true });
-  await fs.writeFile(path.join(output, 'logcat.txt'), logs.stdout || logs.stderr || '');
-  const screen = spawnSync(adb, [...args, 'exec-out', 'screencap', '-p'], { maxBuffer: 16 << 20, timeout: 60000, windowsHide: true });
-  if (screen.status === 0) await fs.writeFile(path.join(output, 'screen.png'), screen.stdout);
-  const tree = spawnSync(adb, [...args, 'exec-out', 'uiautomator', 'dump', '/dev/tty'], { encoding: 'utf8', timeout: 60000, windowsHide: true });
-  await fs.writeFile(path.join(output, 'ui.xml'), tree.stdout || '');
-  if (forwarded) spawnSync(adb, [...args, 'forward', '--remove', 'tcp:32173'], { timeout: 10000, windowsHide: true });
-  for (const port of debugPorts) spawnSync(adb, [...args, 'forward', '--remove', `tcp:${port}`], { timeout: 10000, windowsHide: true });
-  if (original) {
-    for (const command of [
-      ['shell', 'cmd', 'connectivity', 'airplane-mode', original.airplane_mode_on === '1' ? 'enable' : 'disable'],
-      ['shell', 'svc', 'wifi', original.wifi_on === '1' ? 'enable' : 'disable'],
-      ['shell', 'svc', 'data', original.mobile_data === '1' ? 'enable' : 'disable'],
-    ]) {
-      const restored = spawnSync(adb, [...args, ...command], { encoding: 'utf8', timeout: 10000, windowsHide: true });
-      if (restored.status !== 0) { console.error(`Could not restore emulator setting: ${command.join(' ')}: ${restored.stderr || restored.error}`); process.exitCode = 1; }
+  if (emulatorVerified) {
+    const logs = spawnSync(adb, [...args, 'logcat', '-d'], { encoding: 'utf8', maxBuffer: 32 << 20, timeout: 60000, windowsHide: true });
+    await fs.writeFile(path.join(output, 'logcat.txt'), logs.stdout || logs.stderr || '');
+    const screen = spawnSync(adb, [...args, 'exec-out', 'screencap', '-p'], { maxBuffer: 16 << 20, timeout: 60000, windowsHide: true });
+    if (screen.status === 0) await fs.writeFile(path.join(output, 'screen.png'), screen.stdout);
+    const tree = spawnSync(adb, [...args, 'exec-out', 'uiautomator', 'dump', '/dev/tty'], { encoding: 'utf8', timeout: 60000, windowsHide: true });
+    await fs.writeFile(path.join(output, 'ui.xml'), tree.stdout || '');
+    if (forwarded) spawnSync(adb, [...args, 'forward', '--remove', 'tcp:32173'], { timeout: 10000, windowsHide: true });
+    for (const port of debugPorts) spawnSync(adb, [...args, 'forward', '--remove', `tcp:${port}`], { timeout: 10000, windowsHide: true });
+    if (original) {
+      for (const command of [
+        ['shell', 'cmd', 'connectivity', 'airplane-mode', original.airplane_mode_on === '1' ? 'enable' : 'disable'],
+        ['shell', 'svc', 'wifi', original.wifi_on === '1' ? 'enable' : 'disable'],
+        ['shell', 'svc', 'data', original.mobile_data === '1' ? 'enable' : 'disable'],
+      ]) {
+        const restored = spawnSync(adb, [...args, ...command], { encoding: 'utf8', timeout: 10000, windowsHide: true });
+        if (restored.status !== 0) { console.error(`Could not restore emulator setting: ${command.join(' ')}: ${restored.stderr || restored.error}`); process.exitCode = 1; }
+      }
     }
   }
 }
