@@ -2,13 +2,37 @@
 
 当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.3.1-100032)为 v0.3.1，内部 versionCode=100032、安装界面 versionName=0.3.1；仅上传 `Stronghold-Protocol-0.3.1-arm64-v8a.apk`，前一稳定 v0.3.0 及更早版本继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
 
-## 2026-10-19：v0.3.1 完整离线压缩候选（验证中）
+## 2026-10-19：v0.3.1 完整离线压缩候选
 
-用户本轮授权实现并交付压缩候选，不正式发布。固定作者 v0.3.1 / b3deebdae4a92642c007d217a1a4573e5d3612c5、原运行时/字体/签名，全部素材保留。仅游戏内层 ZIP 启用固定 level6 的流式 DEFLATE，默认 STORE 和运行时备份不变，外层 APK 保持不重复压缩，安装器安全/空间/回退策略不变。
+本轮只交付压缩候选，不正式发布。固定作者 v0.3.1 / b3deebdae4a92642c007d217a1a4573e5d3612c5，原运行时、字体、包名和长期签名不变，全部素材保留。游戏内层 ZIP 采用固定 level6 的流式 DEFLATE，默认 STORE 及运行时备份不变，外层 APK 不重复压缩；安装器安全、空间、回退和资源保留策略未调整。
 
-新增归档回归在旧实现上失败（不产生 DEFLATE、不能满足压缩/失败清理约束），修复后文本/二进制/空文件/中文路径、确定性、短写、CRC/长度/截断、失败保留旧输出均通过。固定 STORE 样本与改造前输出 SHA256 同为 cab5cc5dbf504adea2a200fb73a4ad0722acd0684e1b1c275ef789b00dc11b51，默认行为字节兼容。
+实现提交 4eb528a4。新增归档回归在旧实现上按预期失败；修复后文本/二进制/空文件/中文路径、确定性、短写、CRC/长度/截断、失败保留旧输出均通过。固定 STORE 样本与改造前 SHA256 同为 cab5cc5dbf504adea2a200fb73a4ad0722acd0684e1b1c275ef789b00dc11b51。完整 STORE 游戏 ZIP 摘要也与原正式 v0.3.1 构建一致，未混入新上游或改变游戏内容。
 
-完整资源逐文件校验、同模拟器 A/B 各三次断网首启、覆盖升级设置与资源复用、两 ABI、签名及摘要均待本轮云端验证。APK 缩减至少10%、首启中位耗时不超过基线120%是候选推进门槛，不以删素材或放宽校验达标。
+[候选工作流 39190129639](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/39190129639) 使用手动 compression_benchmark，独立 Python ZIP 实现逐文件核对两种归档的路径、数量、CRC、解压大小及 SHA256。32009 个文件全部一致，31629 项素材引用无缺失；bundleId 均为 game-0.3.1-4aba07a067b93b4fc3831940，解压后内容为 1180073139 bytes。
+
+| 指标 | STORE 基线 | DEFLATE level6 |
+| --- | ---: | ---: |
+| 资源 ZIP bytes | 1185981079 | 839691444 |
+| ZIP 写入耗时 | 19.255 秒 | 42.821 秒 |
+| 同输入 ARM64 未签名 APK bytes | 1221361339 | 875071703 |
+| 清数据断网首启 1 | 32.010 秒 | 28.680 秒 |
+| 清数据断网首启 2 | 24.738 秒 | 28.220 秒 |
+| 清数据断网首启 3 | 24.276 秒 | 26.567 秒 |
+| 首启至大厅中位数 | 24.738 秒 | 28.220 秒 |
+| ARM64 Gradle 构建 | 27.60 秒 | 26.75 秒 |
+| x86_64 Gradle 构建 | 22.19 秒 | 20.44 秒 |
+
+两种包的 APK 缩减为 28.35%，首启中位数增加 14.08%，满足至少10%缩包、首启不超过基线120%的门槛。三轮首启交错执行于同一 API36 / 16 KB / 8 GiB 模拟器；计时从启动 Activity 至实际昵称进入大厅，不包含安装和 Gradle 构建。Gradle 顺序执行存在缓存差异，构建秒数仅记录实况，不据此推断压缩提高构建速度。
+
+未压缩→压缩覆盖升级保留昵称 AndroidQA、真实游戏设置（bgm0.35 / muted=true / quality=low）；.verified 的 inode、mtime、64字节长度及摘要均不变，证明同 bundleId 未重解压。升级至大厅12.511秒。七轮均保留 WebSocket、Activity 真正销毁/重建及同一 Node 进程检查，截图已人工查看。
+
+本机移动工具31通过/2环境跳过；云端移动工具33项全部通过，无跳过，Android 单元18/18、lint 0 errors/5 warnings，两 ABI 四份对照/候选 APK 构建通过。压缩 ZIP SHA256=56fd9f2f08f14272399b95a408bf2bdb80b94f74c07cf9270f92db0295b1cf26，STORE ZIP SHA256=a54cb7cfa11029c0561dae3a9aa44d1ad9aea13e62940e66a8d3f030b7f6057c。
+
+首次签名与附件上传已通过，收尾跨分支写回失败：sign 作业从浅签出的测试分支写向 codex/android，被 Git 拒绝 fetch first，远端并没有用户新提交。已由维护者先将通过 A/B 的 4eb528a4 快进到 Android 分支，首次草稿保留为 diagnostic-android-v0.3.1-100033，仅重跑失败的 sign 作业，未重跑或放宽 A/B。签名收尾 attempt2 全部成功，机器人实际锁文件提交6b6e5ec8。最终草稿 android-v0.3.1-100033 的12个输入完整，签名与ZIP16KB对齐检查通过；实际签名APK为875083446 bytes，SHA256=089505d278b7074dc40b39985d2178d1c874907ebbe0d930ab837916853f364e，包名及长期证书一致。正式latest仍是android-v0.3.1-100032，未运行正式发布流程。
+
+证据在忽略目录 mobile/build/qa/compression-20261019/：cloud/build/qa/compression-benchmark.json 为完整对照汇总，compression-archives.json 为资源清单与归档摘要，compression-baseline-* / compression-compressed-* / compression-upgrade-* 为分轮日志、DOM、截图和设置/marker证据；Android报告位于 cloud/android/。candidate/ 为签名元数据，attempt1.log / attempt2.log 为完整流水线记录，failed.log 为首次写回失败证据，final-candidate-api.json / stable-latest.json 为最终草稿与稳定版元数据。
+
+未运行上游全量游戏测试，未恢复真机操作。完整对局、正式签名真机覆盖升级、低内存/API24及其他真实设备性能仍未验证，模拟器28.220秒不能作为所有手机的首启承诺。解压后游戏文件仍约1.18GB，APK缩小不代表运行内存或安装后全部占用同比减少。
 
 ## 2026-10-18：v0.3.1 更新与发布
 
