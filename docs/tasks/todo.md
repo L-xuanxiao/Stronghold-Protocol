@@ -1,8 +1,19 @@
 # 可持续更新的离线 Android 版
 
+## 2026-10-19：Android 维护分支改名
+
+- [x] 确认主工作区干净、远程默认分支及最近运行状态，核对工作流和当前文档中的分支引用。
+- [x] 更新工作流触发/写回及当前维护说明，运行相关回归并核对调度不变。
+- [x] 将 fork 默认分支和主工作区分支改为 xx/android，同步提交及追踪关系，验证仅保留 master、xx/android。
+- [x] 记录结果；保留维护 worktree、历史记录和已发布附件，不触发构建或发布。
+
+### 结果审查
+
+使用 GitHub 分支改名接口将 fork 默认分支由 codex/android 改为 xx/android，主工作区同步改名并追踪 origin/xx/android；以后默认在主工作区该分支维护。更新候选工作流的 push 分支与两处机器人写回目标、当前维护说明及验证记录链接；历史验证中的旧分支名保留原事实。北京时间 06:00/18:00 调度不变，master、维护 worktree、提交历史、标签与 Release 保留。相关回归 9 通过、1 跳过（本机无 Bash 的 master 同步脚本检查）；YAML 解析、分支/写回/cron 不变量及 diff 检查通过。以 [skip ci] 提交同步改名配置，不运行 APK 构建或正式发布；改名后的云端写回和定时实际执行留待后续正常运行验证。
+
 ## 需求与边界
 
-- 在 L-xuanxiao/Stronghold-Protocol 的 codex/android 分支开发；master 跟随作者原版。
+- 在 L-xuanxiao/Stronghold-Protocol 的 xx/android 分支开发；master 跟随作者原版。
 - 首版锁定作者 v0.1.2，复用 PR #7 的手机内置 Node 路线，不改游戏规则和协议。
 - APK 包含全部资源；设置、昵称和干员调配可保留与导入导出；不实现跨进程对局存档。
 - 默认离线单机，主动开启局域网联机后支持后台开服与停止通知。

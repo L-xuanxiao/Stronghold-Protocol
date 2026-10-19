@@ -1,6 +1,6 @@
 # Android 离线版
 
-在 [L-xuanxiao/Stronghold-Protocol](https://github.com/L-xuanxiao/Stronghold-Protocol) 的 `codex/android` 分支维护。`master` 保留作者原版；打包不改动游戏规则和 `/ws` 协议。
+在 [L-xuanxiao/Stronghold-Protocol](https://github.com/L-xuanxiao/Stronghold-Protocol) 的 `xx/android` 分支维护。`master` 保留作者原版；打包不改动游戏规则和 `/ws` 协议。
 
 ## 使用
 
@@ -51,7 +51,7 @@ Android 工作流固定使用已通过全链路检查的 Ubuntu24.04，SDK/Gradl
 
 手机上的游戏随 APK 覆盖安装更新：下载并校验新包，使用原包名和长期签名直接安装，保留应用数据。请在当前对局结束后安装；安装更新会重启应用，当前对局无法恢复。APK 内已包含完整素材，运行时无需下载游戏资源。
 
-首次配置：启用 fork 的 Actions，将默认分支设为 `codex/android`，配置以下 Secrets：
+首次配置：启用 fork 的 Actions，将默认分支设为 `xx/android`，配置以下 Secrets：
 
 - `ANDROID_KEYSTORE_BASE64`
 - `ANDROID_KEYSTORE_PASSWORD`
