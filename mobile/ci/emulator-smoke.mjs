@@ -2,6 +2,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { isLobby } from './smoke-dom.mjs';
 
 const adb = process.env.ADB || 'adb';
 const serial = process.env.ANDROID_SERIAL;
@@ -112,7 +113,7 @@ async function waitDom(name, matches) {
   let state;
   for (let i = 0; i < 40; i++) {
     // Android 16 的 UIAutomator 可能仅暴露 WebView 容器，直接核对 debug WebView 的实际可见 DOM。
-    state = await webView.evaluate('({visible:document.visibilityState==="visible",text:document.body.innerText,inputs:[...document.querySelectorAll("input")].map(i=>({value:i.value,type:i.type}))})');
+    state = await webView.evaluate('import("/js/store.js").then(({store,selectRoute})=>({visible:document.visibilityState==="visible",text:document.body.innerText,route:selectRoute(store.get()),playerName:store.get().me?.name,inputs:[...document.querySelectorAll("input")].map(i=>({value:i.value,type:i.type}))}))');
     if (state.visible && matches(state)) {
       await fs.writeFile(path.join(output, `${name}.json`), JSON.stringify(state, null, 2));
       return state;
@@ -194,7 +195,7 @@ try {
   }
   await waitDom('nickname-input', state => state.inputs.some(input => input.type === 'text' && input.value === 'AndroidQA'));
   await webView.evaluate('[...document.querySelectorAll("button")].find(button=>button.innerText.trim()==="开始"&&!button.disabled).click()');
-  await waitDom('lobby', state => state.text.includes('选择模拟协议') && state.text.includes('独立模拟') && state.text.includes('AndroidQA'));
+  await waitDom('lobby', isLobby);
   const launchToLobbyMs = Math.round(performance.now() - launchStarted);
   let settings;
   if (seedSettings || keepData) {
@@ -226,8 +227,8 @@ try {
   console.log('Activity destruction observed; checking service continuity and saved nickname');
   await waitUi('recreated-native', nodes => nodes.some(node => node.class === 'android.webkit.WebView'));
   webView = await connectWebView();
-  await waitDom('recreated', state => (state.text.includes('AndroidQA') || state.inputs.some(input => input.value === 'AndroidQA'))
-    && (state.text.includes('选择模拟协议') || state.text.includes('STRONGHOLD PROTOCOL') && state.text.includes('已连接服务器')));
+  await waitDom('recreated', state => isLobby(state) || state.inputs.some(input => input.value === 'AndroidQA')
+    && state.text.includes('STRONGHOLD PROTOCOL') && state.text.includes('已连接服务器'));
   const again = await healthNow();
   const after = { app: run('shell', 'pidof', packageName).trim(), node: nodePid(), uptimeSec: again.uptimeSec };
   if (!again.ok || before.app !== after.app || before.node !== after.node || after.uptimeSec < before.uptimeSec) {
