@@ -2,6 +2,30 @@
 
 当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.3.1-100032)为 v0.3.1，内部 versionCode=100032、安装界面 versionName=0.3.1；仅上传 `Stronghold-Protocol-0.3.1-arm64-v8a.apk`，前一稳定 v0.3.0 及更早版本继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
 
+## 2026-10-25：v0.3.3 大厅门禁修复与发布
+
+本轮在主工作区 xx/android 维护，用户明确要求修复后正式发布。锁定作者 v0.3.3 / f07b8965061bbc311ad7aa815879b09264a1e47d，完整官方归档 861090941 bytes、SHA256=1bfc651096ff4c44b76296717bd605220b5204714722832140a3d407153cd2be；未将 fork 分支作为游戏输入。
+
+失败运行 [40144373716](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/40144373716)为 schedule，APK 编译及服务器启动成功，实际 lobby.json 与截图证明已进入新版大厅。v0.3.3 不再常驻“选择模拟协议”标题和昵称，旧断言误报。修复 b8dfcc41 用 store 的真实大厅路由及 me.name 验证身份，并同时要求可见 DOM 有独立/同盟模拟入口；重建复用同一大厅规则，保留标题页昵称恢复、断网、WebSocket、实际销毁和同进程校验。实际失败 DOM 对旧规则的负向对照成立；新增回归拒绝标题页、错误路由、错误昵称及缺失入口。独立只读审查未发现门禁削弱。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 移动工具 | 本机 33 通过/1 跳过（无 Bash）；云端 33 通过/1 跳过（无完整 Gradle 8.13 缓存的 wrapper 探针），随后实际 Gradle 构建通过；语法及 diff 检查通过 |
+| Android | ARM64 Release / x86_64 Debug 构建通过，单元 18/18，lint 0 errors / 5 warnings |
+| 完整资源 | 32725 文件 / 1218622909 bytes，32234 项素材引用无缺失；bundleId=game-0.3.3-b9c5917447e9f404876606d8，DEFLATE ZIP SHA256=ba86f92bc829ea497bad71da17b8687041a89c2a880f065dd48656293eed378b |
+| API36 / 16 KB / 8 GiB 离线模拟器 | 清数据断网首启、实际大厅路由和 AndroidQA 昵称、双入口、WebSocket、Activity 销毁重建通过；前后同一服务进程，昵称恢复；单次启动至大厅 28.912 秒，截图人工核对 |
+| 候选 | [40153397498](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/40153397498)全部成功；android-v0.3.3-100046 草稿 12 个完整输入，机器人 7bec0fda 已写回真实锁文件并同步主工作区 |
+| 签名与对齐 | 原包名/长期证书一致，ZIP 16 KB 对齐通过；签名 APK 890701494 bytes，SHA256=064f80063b3432fbcba63191e094fa06ef048ffe7d7b85fdaa0eee06f4e5701f，与候选 GitHub 附件摘要一致 |
+| 正式发布 | 待原发布门禁执行；当前 latest 仍为 android-v0.3.1-100032，保留旧稳定版 |
+
+本次保留已验收的流式 level6 无损压缩，不重新执行固定 v0.3.1 的 A/B；新包体积不能用于推导同输入压缩收益，单次首启不能作为性能中位数。解压后仍约1.22 GB，不宣称运行内存或最终安装占用同比下降。发布说明基于作者正式 v0.3.2/v0.3.3，并注明历史版本预览与推算限制、作者有意偏差及 Android 未验证范围。
+
+最近连续 schedule 记录包含 39798373819、39876922999、39970339129、40043391417、40099295921；本次40144373716也是已触发后失败，不能解释为漏触发。北京时间06:00/18:00调度不变，不保证平台准点或必达。
+
+证据均相对 mobile/build/qa/update-20261025/：failed.log、failed-cloud/ 为原失败；tooling-tests.log 为本机回归；upstream-release.json、upstream-v032.json 为作者说明；candidate-lock/、candidate/、candidate-api.json 为真实锁定输入及签名/构建数据；build.log、candidate-run.log、candidate-run.json 为成功流水线；success-cloud/build/qa/ 为断网、DOM、截图和 smoke.json，success-cloud/android/ 为单元和 lint 报告。codebase-memory list_projects 返回 Transport closed，使用定向源码回退。
+
+未运行上游全量游戏测试，未恢复真机操作。完整对局、历史版本完整玩法、特效/语音真机表现、插件导入导出/沙箱/跨升级保留、正式签名真机覆盖升级、双设备、Doze、网络切换及 API24/低内存设备兼容性仍待验证；模拟器结果不代表这些项目验收，当前对局无跨进程存档。
+
 ## 2026-10-19：v0.3.1 完整离线压缩候选
 
 本轮只交付压缩候选，不正式发布。固定作者 v0.3.1 / b3deebdae4a92642c007d217a1a4573e5d3612c5，原运行时、字体、包名和长期签名不变，全部素材保留。游戏内层 ZIP 采用固定 level6 的流式 DEFLATE，默认 STORE 及运行时备份不变，外层 APK 不重复压缩；安装器安全、空间、回退和资源保留策略未调整。
