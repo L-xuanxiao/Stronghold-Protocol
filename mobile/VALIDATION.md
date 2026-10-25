@@ -1,6 +1,6 @@
 # Android 验证与发布记录
 
-当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.3.1-100032)为 v0.3.1，内部 versionCode=100032、安装界面 versionName=0.3.1；仅上传 `Stronghold-Protocol-0.3.1-arm64-v8a.apk`，前一稳定 v0.3.0 及更早版本继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
+当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.3.3-100046)为 v0.3.3，内部 versionCode=100046、安装界面 versionName=0.3.3；仅上传 `Stronghold-Protocol-0.3.3-arm64-v8a.apk`，前一稳定 v0.3.1 及更早版本继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
 
 ## 2026-10-25：v0.3.3 大厅门禁修复与发布
 
@@ -16,13 +16,13 @@
 | API36 / 16 KB / 8 GiB 离线模拟器 | 清数据断网首启、实际大厅路由和 AndroidQA 昵称、双入口、WebSocket、Activity 销毁重建通过；前后同一服务进程，昵称恢复；单次启动至大厅 28.912 秒，截图人工核对 |
 | 候选 | [40153397498](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/40153397498)全部成功；android-v0.3.3-100046 草稿 12 个完整输入，机器人 7bec0fda 已写回真实锁文件并同步主工作区 |
 | 签名与对齐 | 原包名/长期证书一致，ZIP 16 KB 对齐通过；签名 APK 890701494 bytes，SHA256=064f80063b3432fbcba63191e094fa06ef048ffe7d7b85fdaa0eee06f4e5701f，与候选 GitHub 附件摘要一致 |
-| 正式发布 | 待原发布门禁执行；当前 latest 仍为 android-v0.3.1-100032，保留旧稳定版 |
+| 正式发布 | [门禁40154093889](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/40154093889)成功；北京时间2026-10-25 10:22:19发布为latest，仅公开同一APK；摘要/大小/完整正文均与已审查候选及说明一致，源码标签f305b278含真实锁文件，12个输入保留于inputs-android-v0.3.3-100046草稿；旧稳定版保留 |
 
 本次保留已验收的流式 level6 无损压缩，不重新执行固定 v0.3.1 的 A/B；新包体积不能用于推导同输入压缩收益，单次首启不能作为性能中位数。解压后仍约1.22 GB，不宣称运行内存或最终安装占用同比下降。发布说明基于作者正式 v0.3.2/v0.3.3，并注明历史版本预览与推算限制、作者有意偏差及 Android 未验证范围。
 
 最近连续 schedule 记录包含 39798373819、39876922999、39970339129、40043391417、40099295921；本次40144373716也是已触发后失败，不能解释为漏触发。北京时间06:00/18:00调度不变，不保证平台准点或必达。
 
-证据均相对 mobile/build/qa/update-20261025/：failed.log、failed-cloud/ 为原失败；tooling-tests.log 为本机回归；upstream-release.json、upstream-v032.json 为作者说明；candidate-lock/、candidate/、candidate-api.json 为真实锁定输入及签名/构建数据；build.log、candidate-run.log、candidate-run.json 为成功流水线；success-cloud/build/qa/ 为断网、DOM、截图和 smoke.json，success-cloud/android/ 为单元和 lint 报告。codebase-memory list_projects 返回 Transport closed，使用定向源码回退。
+证据均相对 mobile/build/qa/update-20261025/：failed.log、failed-cloud/ 为原失败；tooling-tests.log 为本机回归；upstream-release.json、upstream-v032.json 为作者说明；candidate-lock/、candidate/、candidate-api.json 为真实锁定输入及签名/构建数据；build.log、candidate-run.log、candidate-run.json 为成功流水线；publish.log、published.json、inputs.json、source-tag.json 为正式发布与收尾核验证据；success-cloud/build/qa/ 为断网、DOM、截图和 smoke.json，success-cloud/android/ 为单元和 lint 报告。codebase-memory list_projects 返回 Transport closed，使用定向源码回退。
 
 未运行上游全量游戏测试，未恢复真机操作。完整对局、历史版本完整玩法、特效/语音真机表现、插件导入导出/沙箱/跨升级保留、正式签名真机覆盖升级、双设备、Doze、网络切换及 API24/低内存设备兼容性仍待验证；模拟器结果不代表这些项目验收，当前对局无跨进程存档。
 
