@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "repository": "sganggs/Stronghold-Protocol",
-  "tag": "v0.3.3",
-  "commit": "f07b8965061bbc311ad7aa815879b09264a1e47d",
-  "version": "0.3.3",
+  "tag": "v0.4.0",
+  "commit": "b6d8b2ef46ed2da69585ea437c627c5fc2b4145e",
+  "version": "0.4.0",
   "assetArchive": {
-    "url": "https://github.com/sganggs/Stronghold-Protocol/releases/download/v0.3.3/Stronghold-Protocol-v0.3.3.zip",
-    "sha256": "1bfc651096ff4c44b76296717bd605220b5204714722832140a3d407153cd2be",
-    "size": 861090941
+    "url": "https://github.com/sganggs/Stronghold-Protocol/releases/download/v0.4.0/Stronghold-Protocol-v0.4.0.zip",
+    "sha256": "aded7ef95d8494e377154a4e0db55cb317866518497ff3cab2d8b280e63a0b45",
+    "size": 1145084137
   }
 }
