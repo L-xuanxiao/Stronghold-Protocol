@@ -5,17 +5,19 @@
 - [x] 核对上游正式标签、完整包摘要和当前 Android 正式版。
 - [x] 同步 `xx/android`，检查新版打包和大厅入口；复现并修复更新说明文件缺失，本地回归通过。
 - [x] 验证双 ABI、移动工具、Android 单元测试与 lint、16 KB 断网首启和 Activity 重建、长期签名及 APK 摘要。
-- [ ] 记录验证与上游改动；发布同一 APK，核对 latest、源码标签、唯一公开附件和 `inputs-` 草稿。
+- [x] 记录验证与上游改动；发布同一 APK，核对 latest、源码标签、唯一公开附件和 `inputs-` 草稿。
 
 ### 结果审查
 
-上游 `v0.4.0` 对应 `b6d8b2ef46ed2da69585ea437c627c5fc2b4145e`。完整包为 1145084137 bytes，SHA256 为 `aded7ef95d8494e377154a4e0db55cb317866518497ff3cab2d8b280e63a0b45`。当前公开 Android 版为 `android-v0.3.3-100046`。
+上游 `v0.4.0` 对应 `b6d8b2ef46ed2da69585ea437c627c5fc2b4145e`。完整包为 1145084137 bytes，SHA256 为 `aded7ef95d8494e377154a4e0db55cb317866518497ff3cab2d8b280e63a0b45`。本轮开始时的公开 Android 版为 `android-v0.3.3-100046`。
 
 上游在标题页加入更新说明，服务器从根目录读取 `CHANGELOG.md`。Android 裁剪清单漏掉该文件，新增回归用例先复现 `ENOENT`，补入文件后通过。移动工具测试 33 项通过，1 项因本机无 Bash 跳过。提交 `9486c179` 同时加入规程独立模拟的离线检查。取消旧候选 [44000834789](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/44000834789)，由含修复的[候选 44001290894](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/44001290894) 验收。
 
 在本机启动实际裁剪后的 v0.4.0 服务，`/CHANGELOG.md` 返回 HTTP 200，正文与上游锁定文件相同。上游版本配置、规程数据和更新说明专项测试 18 项通过，1 项因缺少官方活动表跳过。未运行上游全量测试。
 
-候选 `android-v0.4.0-100083` 构建及签名通过，机器人在 `b4fe6fc8` 写回实际锁文件。完整检查覆盖 39,509 项素材引用、双 ABI 构建、18 项 Android 单元测试、lint 和 API 36 / 16 KB 断网模拟器。模拟器打开更新说明，并从大厅进入规程独立模拟，看到极速模拟和 20 个可选等级。正式发布证据待回填。
+候选 `android-v0.4.0-100083` 构建及签名通过，机器人在 `b4fe6fc8` 写回实际锁文件。完整检查覆盖 39,509 项素材引用、双 ABI 构建、18 项 Android 单元测试、lint 和 API 36 / 16 KB 断网模拟器。模拟器打开更新说明，并从大厅进入规程独立模拟，看到极速模拟和 20 个可选等级。
+
+[发布门禁 44002957637](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/44002957637) 通过。北京时间 10:28:59，[Android v0.4.0](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.4.0-100083) 成为 latest。核对了唯一 APK 的大小和摘要、完整发布正文、含实际锁文件的源码标签 `7ee8d64b`，以及备份草稿的 12 个原附件。旧版 v0.3.3 仍可下载。余下验证范围见 `mobile/VALIDATION.md`。
 
 ## 2026-10-25：修复上游更新后的候选失败并正式发布
 
