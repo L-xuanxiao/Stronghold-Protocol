@@ -152,7 +152,7 @@ export async function validateAssetReferences(game) {
 }
 async function copyTree(source, destination) { await fsp.cp(source, destination, { recursive: true, dereference: false, filter: (file) => !fs.lstatSync(file).isSymbolicLink() }); }
 export async function stageGameSource(source, destination) {
-  for (const rel of ['server', 'shared', 'data', 'public', 'package.json', 'LICENSE', 'NOTICE.md', 'THIRD-PARTY-NOTICES.md']) await copyTree(path.join(source, rel), path.join(destination, rel));
+  for (const rel of ['server', 'shared', 'data', 'public', 'package.json', 'LICENSE', 'NOTICE.md', 'THIRD-PARTY-NOTICES.md', 'CHANGELOG.md']) await copyTree(path.join(source, rel), path.join(destination, rel));
   if (exists(path.join(source, 'NOTICE'))) await copyTree(path.join(source, 'NOTICE'), path.join(destination, 'NOTICE'));
   await copyTree(path.join(source, 'docs/research'), path.join(destination, 'docs/research'));
   // v0.3.0 的服务器直接导入这些解析器，不能再将整个 tools 目录视为仅构建时使用。

@@ -35,13 +35,13 @@ function elf({ alignment = 16384, needed = [], machine = 183 } = {}) {
   records.forEach(([tag, value], i) => { b.writeBigInt64LE(BigInt(tag), 192 + i * 16); b.writeBigUInt64LE(BigInt(value), 200 + i * 16); }); return b;
 }
 
-test('打包后的服务器保留素材解析器和 v0.3.1 工作台运行依赖', async (t) => {
+test('打包后的服务器保留素材解析器、工作台依赖和更新日志', async (t) => {
   const dir = await temporary(t), source = path.join(dir, 'source'), staged = path.join(dir, 'staged');
   const files = {
     'package.json': '{"type":"module","dependencies":{"acorn":"8.18.0"}}',
     'server/index.js': "import '../tools/assets/skel.mjs'; import '../tools/assets/anim-roles.mjs'; import '../tools/assets/atlas.mjs'; import '../tools/assets/official-tables.mjs'; import { parse } from 'acorn'; if (parse('const x = 1').type !== 'Program') throw Error('parser unavailable');",
     'shared/index.js': '', 'data/index.json': '{}', 'public/index.html': '',
-    'LICENSE': 'license', 'NOTICE.md': 'notice', 'THIRD-PARTY-NOTICES.md': 'third party',
+    'LICENSE': 'license', 'NOTICE.md': 'notice', 'THIRD-PARTY-NOTICES.md': 'third party', 'CHANGELOG.md': '## 0.4.0',
     'docs/research/table.md': 'table', 'node_modules/ws/package.json': '{"type":"commonjs"}',
     'node_modules/acorn/package.json': '{"type":"module","exports":"./index.js"}',
     'node_modules/acorn/index.js': 'export const parse = () => ({ type: "Program" });',
@@ -56,6 +56,7 @@ test('打包后的服务器保留素材解析器和 v0.3.1 工作台运行依赖
     const file = path.join(source, rel); await fsp.mkdir(path.dirname(file), { recursive: true }); await fsp.writeFile(file, bytes);
   }
   await stageGameSource(source, staged);
+  assert.equal(await fsp.readFile(path.join(staged, 'CHANGELOG.md'), 'utf8'), files['CHANGELOG.md']);
   await fsp.rm(source, { recursive: true, force: true });
   const child = spawnSync(process.execPath, [path.join(staged, 'server/index.js')], { encoding: 'utf8', windowsHide: true });
   assert.equal(child.status, 0, child.stderr);

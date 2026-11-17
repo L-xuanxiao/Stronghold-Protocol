@@ -113,7 +113,13 @@ async function waitDom(name, matches) {
   let state;
   for (let i = 0; i < 40; i++) {
     // Android 16 的 UIAutomator 可能仅暴露 WebView 容器，直接核对 debug WebView 的实际可见 DOM。
-    state = await webView.evaluate('import("/js/store.js").then(({store,selectRoute})=>({visible:document.visibilityState==="visible",text:document.body.innerText,route:selectRoute(store.get()),playerName:store.get().me?.name,inputs:[...document.querySelectorAll("input")].map(i=>({value:i.value,type:i.type}))}))');
+    state = await webView.evaluate(`import("/js/store.js").then(({store,selectRoute})=>({
+      visible:document.visibilityState==="visible",text:document.body.innerText,
+      route:selectRoute(store.get()),playerName:store.get().me?.name,
+      inputs:[...document.querySelectorAll("input")].map(i=>({value:i.value,type:i.type})),
+      releaseNotes:document.querySelector(".release-notes-body")?.innerText,
+      enabledLevels:document.querySelectorAll(".ladder__cell:not(:disabled)").length
+    }))`);
     if (state.visible && matches(state)) {
       await fs.writeFile(path.join(output, `${name}.json`), JSON.stringify(state, null, 2));
       return state;
@@ -187,6 +193,14 @@ try {
   webView = await connectWebView();
   await waitDom('title', state => state.text.includes('STRONGHOLD PROTOCOL') && state.text.includes('博士代号') && state.text.includes('已连接服务器')
     && state.inputs.some(input => input.type === 'text'));
+  // 0.4.0 首启会弹出更新说明，必须确认正文离线可读并关闭，再操作标题页。
+  const regulationUpdate = lock.version === '0.4.0';
+  if (regulationUpdate) {
+    await webView.evaluate('document.querySelector(".release-notes-entry").click()');
+    await waitDom('release-notes', state => state.releaseNotes?.includes('卫戍协议·规程·序列Ⅰ'));
+    await webView.evaluate('[...document.querySelectorAll(".release-notes button")].find(button=>button.innerText.trim()==="关闭").click()');
+    await waitDom('release-notes-closed', state => !state.releaseNotes);
+  }
   if (keepData) {
     await waitDom('upgrade-nickname', state => state.inputs.some(input => input.type === 'text' && input.value === 'AndroidQA'));
   } else {
@@ -197,6 +211,11 @@ try {
   await webView.evaluate('[...document.querySelectorAll("button")].find(button=>button.innerText.trim()==="开始"&&!button.disabled).click()');
   await waitDom('lobby', isLobby);
   const launchToLobbyMs = Math.round(performance.now() - launchStarted);
+  if (regulationUpdate) {
+    await webView.evaluate('document.querySelector("button[data-mode=solo]").click()');
+    await waitDom('regulation-solo', state => state.enabledLevels === 20 && state.text.includes('极速模拟'));
+    await webView.evaluate('document.querySelector(".proto__back").click()');
+  }
   let settings;
   if (seedSettings || keepData) {
     settings = await webView.evaluate(`import('/js/ui/settings.js').then(({updateSettings,settingsStore})=>{
@@ -246,7 +265,9 @@ try {
   }
   await fs.writeFile(path.join(output, 'smoke.json'), JSON.stringify({ launchToLobbyMs, keepData, settings, bundle, health: again, apiLevel: sdk, pageSize: pages, activity, before, after,
     verified: [keepData ? 'retained-data offline upgrade without external network' : 'fresh offline launch without external network', 'bundled resources', 'visible game UI', 'nickname and lobby interaction',
-      'WebView WebSocket connection', 'Activity destruction and recreation', 'same Node process', 'nickname retention', ...(settings ? ['saved game settings retention'] : [])] }, null, 2));
+      'WebView WebSocket connection', 'Activity destruction and recreation', 'same Node process', 'nickname retention',
+      ...(regulationUpdate ? ['v0.4.0 offline release notes', 'default solo season with fast mode and 20 difficulty levels'] : []),
+      ...(settings ? ['saved game settings retention'] : [])] }, null, 2));
   console.log(`Android smoke passed, page size=${pages}`);
 } finally {
   webView?.close();
