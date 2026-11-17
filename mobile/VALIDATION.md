@@ -1,5 +1,17 @@
 # Android 验证与发布记录
 
+## 2026-11-17：v0.4.0 规程候选
+
+上游锁定到 `v0.4.0 / b6d8b2ef46ed2da69585ea437c627c5fc2b4145e`。官方完整包 1145084137 bytes，SHA256 为 `aded7ef95d8494e377154a4e0db55cb317866518497ff3cab2d8b280e63a0b45`。
+
+- **修复**：Android 裁剪清单漏掉上游标题页请求的 `CHANGELOG.md`。回归用例修复前报 `ENOENT`，修复后通过。实际裁剪后的 v0.4.0 服务返回 HTTP 200，正文与上游一致。修复提交 `9486c179`。
+- **构建**：[候选 44001290894](https://github.com/L-xuanxiao/Stronghold-Protocol/actions/runs/44001290894) 通过 ARM64 Release、x86_64 Debug 和移动工具测试。Android 单元测试 18/18，lint 0 错误、5 警告。离线包包含 39,993 个文件，校验 39,509 项素材引用，无缺失。解压内容共 1628185583 bytes。
+- **断网模拟器**：API 36、16 KB 页、8 GiB 内存。清数据后确认没有默认外部网络。更新说明显示规程正文，登录后默认规程独立模拟提供极速模拟和 20 个可选等级。WebSocket、Activity 销毁重建、昵称保留和同一 Node 进程均通过。本轮从启动到关闭更新说明并进入大厅为 56.046 秒。
+- **签名**：原 Android 包名和长期证书一致，ZIP 16 KB 对齐通过。签名 APK 1175889590 bytes，SHA256 为 `49cee1a1b356373c8289a685ab63dd2e9520bad05a10d37aec27f74c9d341d56`，与候选附件摘要一致。候选含 12 个附件，实际锁文件见机器人提交 `b4fe6fc8`。
+- **未验证**：完整对局、历史版本完整玩法、主题和特效渲染、插件功能和跨升级保留、正式签名真机覆盖升级、双设备联机、Doze、网络切换、API 24 和低内存设备。本轮未操作真机，也未运行上游全量测试。
+
+云端报告及候选元数据保存在忽略目录 `mobile/build/qa/update-20261117/`。模拟器证据包括 `release-notes.json`、`regulation-solo.json` 和 `smoke.json`。
+
 当前[正式 Release](https://github.com/L-xuanxiao/Stronghold-Protocol/releases/tag/android-v0.3.3-100046)为 v0.3.3，内部 versionCode=100046、安装界面 versionName=0.3.3；仅上传 `Stronghold-Protocol-0.3.3-arm64-v8a.apk`，前一稳定 v0.3.1 及更早版本继续保留。包名 `io.github.strongholdprotocol.mobile`，长期签名证书指纹见 `signing.json`。手机实际测试的首版为 v0.1.2 / `9d404199df76f862eff7385b82f952ab0498f4c5`、code1；用户于 2026-10-04 终止剩余真机测试，本任务未继续向手机安装新包或执行真机测试。
 
 ## 2026-10-25：v0.3.3 大厅门禁修复与发布
